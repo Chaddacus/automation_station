@@ -1,7 +1,7 @@
 Cloudwarriors Automation Station 
 
 Django based
-<br>
+/cr
 
 config
 update the .evn
