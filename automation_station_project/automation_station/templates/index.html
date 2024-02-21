@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +8,9 @@
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" >
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="static/htmlscripts.js"></script>
+    <link href="{% static 'index.css' %}" rel="stylesheet">
+    <script src="{% static 'index.js' %}"></script>
+    <!-- <script src="static/htmlscripts.js"></script> -->
     
     <title>Automation Station Demo</title>
 
@@ -29,15 +32,17 @@
         window.location.href = "/";    
 
     </script>
-   
     
-    {% endif %} 
+    
+    {% endif %}
+    
+    
+    
+
+
     
     <style>
-        .anchor-offset {
-            scroll-margin-top: 100px;
-            scroll-padding-top: -100px;
-        }
+        
     </style>
     
     <header>
@@ -60,7 +65,7 @@
                         </div>
                         <div>
                             <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 focus:ring-gray-600">
-                                <a href="" class="px-4 py-2 text-sm text-white rounded-md">Settings</a>
+                                <a href="{% url 'settings' %}" class="px-4 py-2 text-sm text-white rounded-md">Settings</a>
                                 <a href="/logout" class="px-4 py-2 text-sm text-white rounded-md">Logout</a>
                             </button>
                         </div>
@@ -85,6 +90,11 @@
                     <span class="flex-1 ms-3 whitespace-nowrap">Zoom Contact Center</span>
                 </a>
             </li>
+            <li>
+                <a href="{% url 'jobs' %}" class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 group">
+                    <span class="flex-1 ms-3 whitespace-nowrap">Jobs</span>
+                </a>
+            </li>
         </ul>
         </div>
     </aside>
@@ -100,12 +110,14 @@
         <div id="zplayout" class="flex flex-wrap items-center gap-2 mb-2">
             <div class="justify-center rounded mx-auto">
                 <div class="bg-gray-700 rounded-md border border-solid border-gray-700 p-4 mx-auto">
+                    <span id="createCallQueueInfo" data-tooltip="Click and drag elements to re-order" class="tooltip-trigger" style="color: white; float: right; font-weight: bold; font-size: larger;">?</span>
                     <h1 class="text-3xl text-white font-bold mx-4 my-4">Create Call Queues</h1>
-                    <form method="POST" action="" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                    <form method="POST" action="{% url 'zp_call_queue_create' %}"enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
                         <div class="mb-6">
                             <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
                         </div>
-                        <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
+                        <input type="submit" id="upload-button" value="Job Create" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
                         <a href="" class="mx-4 text-md text-white" download>Download Sample CSV</a>
                     </form>
                 </div>
@@ -244,6 +256,19 @@
                 </div>
             </div>
         </div>
+        {% if messages %}
+   
+                {% for message in messages %}
+                <div id="alert" class="alert alert-{{ message.tags }} pr-10 bg-blue-500 text-white px-4 py-3 rounded absolute bottom-0 right-0 z-50" role="alert">
+                    <span class="block sm:inline">{{ message }}</span>
+                    <script>console.log('{{ message }}')</script>
+                    <span class="absolute top-0 bottom-0 right-0 px-4 py-3 closealertbutton" onclick="closeAlert()">
+                        <svg class="fill-current h-6 w-6 text-white" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"></path></svg>
+                    </span>
+                </div>
+                <script>closeAlertTimer()</script>
+            {% endfor %}
+        {% endif %}
     
     <footer class="bg-white rounded-lg m-4 bg-gray-800">
         <div class="w-full mx-auto max-w-screen-xl p-4 items-center justify-between">

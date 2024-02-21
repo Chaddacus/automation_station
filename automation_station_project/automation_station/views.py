@@ -1,3 +1,7 @@
+import requests
+import logging
+import csv
+
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
@@ -9,12 +13,22 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.contrib.auth import views as auth_views
+from django.contrib import messages
 
+from django.contrib.contenttypes.models import ContentType
+from .models import ZoomPhoneQueue, Job, JobCollection
+from django.utils import timezone
+from django.conf import settings
+
+from django.db.models import Count
 
 from decouple import config
 
-import requests
-import logging
+from io import StringIO
+from .models import Job
+
+
+
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -36,10 +50,64 @@ class CustomLoginView(auth_views.LoginView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['zoomlogin_url'] = zoomlogin(self.request)
+        
+
+def zp_call_queue_create(request):
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        # Create a single Job instance
+        job = Job.objects.create(
+            job_name="zoom phone queue create",
+            user=request.user,
+            status='scheduled',
+            scheduled_time=timezone.now(),
+            execution_time=None,  # or set a specific time if needed
+        )
+
+        reader = csv.DictReader(csv_data.splitlines())
+        for row in reader:
+            # Create a ZoomPhoneSite instance for each row
+            zoom_phone_queue = ZoomPhoneQueue.objects.create(
+                user=request.user,
+                cost_center=row['cost_center'],
+                department=row['department'],
+                site_id=row['site_id'],
+                extension_number=row['extension_number'],
+            )
+
+            # Now create a JobCollection for each ZoomPhoneSite linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomPhoneQueue)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {zoom_phone_queue.department}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=zoom_phone_queue.pk,
+            )
+
+        messages.success(request, "The Phone call queue Create Job and associated collections have been successfully added")
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
 
 @login_required
 def index(request):
-     return render(request, 'demo.html')
+     return render(request, 'index.html')
+
+
+@login_required
+def jobs(request):
+     logger.critical("jobs")
+     user_id = request.user.id
+     jobs = Job.objects.filter(user=request.user).annotate(rows_count=Count('Collection'))
+     return render(request, 'jobs.html', {'jobs': jobs})
+     
+     
+
+@login_required
+def settings(request):
+     logger.critical("settings")
+     return render(request, 'settings.html')
 
 def zoomlogin(request):
      authorization_url, state = zoom.authorization_url(AUTHORIZATION_URL)
@@ -99,3 +167,14 @@ def callback(request):
     login(request,user)
     # Save the token somewhere for later use...
     return redirect('/')
+
+
+def csv_to_dict(csv_data):
+    reader = csv.DictReader(StringIO(csv_data))
+    data = [row for row in reader]
+    return data
+
+
+
+
+    

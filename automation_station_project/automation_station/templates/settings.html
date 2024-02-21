@@ -1,0 +1,226 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv = "X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" >
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.10.2/Sortable.min.js"></script>
+    <link href="{% static 'index.css' %}" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.13.0/Sortable.min.js"></script>
+    <script src="{% static 'index.js' %}"></script>
+    <!-- <script src="static/htmlscripts.js"></script> -->
+    
+    <title>Automation Station Demo</title>
+
+</head>
+<body class="width-auto bg-blue-200">
+    
+     {% if action_success %}
+    <br>
+    <script>
+        alert("Output: {{output | safe}}");
+        window.location.href = "/";
+    
+    </script>
+    {% endif %}
+    <br>
+    {% if action_success == False %}
+    <script>
+        alert("Output: {{output | safe}}");
+        window.location.href = "/";    
+
+    </script>
+    
+    
+    {% endif %}
+    
+    
+    
+
+
+    
+    <style>
+        
+    </style>
+    
+    <header>
+    <nav class="fixed top-0 z-50 w-full bg-white bg-gray-700">
+        <div class="px-3 py-3 lg:px-5 lg:pl-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center justify-start rtl:justify-end">
+                    <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 text-gray-400 hover:bg-gray-700 focus:ring-gray-600">
+                        <span class="sr-only">Open sidebar</span>
+                    </button>
+                    <a href="https://cloudwarriors.ai/" class="flex ms-2 md:me-24">
+                        <img src="https://images.squarespace-cdn.com/content/v1/6565460c16f3431c6a5d6198/a83be56b-5a7a-41f0-9291-55b599ac5758/CW+Black+logo.png?format=1500w" class="h-8 me-3" alt="CW Logo" />
+                        <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap text-white">Automation Station</span>
+                    </a>
+                </div>
+                <div class="flex items-center">
+                    <div class="flex items-center ms-3">
+                        <div class="mx-2 px-4 py-2 justify-start rounded-full bg-blue-500 text-white text-sm">
+                            {{user_email}}
+                        </div>
+                        <div>
+                            <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 focus:ring-gray-600">
+                                <a href="" class="px-4 py-2 text-sm text-white rounded-md">Settings</a>
+                                <a href="/logout" class="px-4 py-2 text-sm text-white rounded-md">Logout</a>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    </header>
+
+    <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-12 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 bg-gray-700 border-gray-500" aria-label="Sidebar">
+        <div class="h-full px-3 pb-4 overflow-y-auto bg-white bg-gray-700">
+            <hr class="my-2 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-4" />
+            <ul class="space-y-2 font-medium">
+            <li>
+                <a href="{%url 'index' %}" class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 group">
+                    <span class="flex-1 ms-3 whitespace-nowrap">Zoom Phone</span>
+                </a>
+            </li>
+            <li>
+                <a href="{%url 'index' %}" class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 group">
+                    <span class="flex-1 ms-3 whitespace-nowrap">Zoom Contact Center</span>
+                </a>
+            </li>
+            <li>
+                <a href="#Jobs" class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 group">
+                    <span class="flex-1 ms-3 whitespace-nowrap">Jobs</span>
+                </a>
+            </li>
+        </ul>
+        </div>
+    </aside>
+    
+    <!-- Begin ZP automation options -->
+    <div class="p-4 sm:ml-64 mt-4">
+        <div id="Jobs"class="anchor-offset flex items-center justify-left h-24 mb-4 mt-16 rounded-md text-white bg-gray-800">
+            <p class="text-3xl text-bold px-5">
+                Settings
+            </p>
+        </div>
+        <br>
+
+
+        
+        <div id="sort" class="flex flex-wrap items-center gap-2 mb-2">
+            <div class="w-full px-3 py-6">
+                <table  class="w-full text-left table-auto">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2 bg-blue-500 text-white">
+                                <input type="checkbox" id="select-all">
+                            </th>
+                            <th class="px-4 py-2 bg-blue-500 text-white">Team</th>
+                            <th class="px-4 py-2 bg-blue-500 text-white">Account Name</th>
+                            <th class="px-4 py-2 bg-blue-500 text-white">Account ID</th>
+                            <th class="px-4 py-2 bg-blue-500 text-white">Client ID</th>
+                            <th class="px-4 py-2 bg-blue-500 text-white">Client Secret</th>
+                            <th class="px-4 py-2 bg-blue-500 text-white action-header">Active <span id="jobTableInfo" data-tooltip="Click and drag elements to re-order" class="tooltip-trigger">?</span></th>                        </tr>
+                            
+                        </thead>
+                    <tbody id="sortable-table-body">
+                        <!-- Repeat this row for each job -->
+                        <tr>
+                            <td class="border px-4 py-2">
+                                <input type="checkbox" class="job-select">
+                            </td>
+                            <td class="border px-4 py-2">Alpha Team</td>
+                            <td class="border px-4 py-2">Client 1</td>
+                            <td class="border px-4 py-2">Account 1 ID</td>
+                            <td class="border px-4 py-2">Client 1 ID</td>
+                            <td class="border px-4 py-2">Client 1 Secret</td>
+                            <td class="border px-4 py-2">X</td>
+
+                          
+                        </tr>
+                        <!-- End row -->
+                         <!-- Repeat this row for each job -->
+                         <tr>
+                            <td class="border px-4 py-2">
+                                <input type="checkbox" class="job-select">
+                            </td>
+                            <td class="border px-4 py-2">Bravo Team</td>
+                            <td class="border px-4 py-2">Client 2</td>
+                            <td class="border px-4 py-2">Account 2 ID</td>
+                            <td class="border px-4 py-2">Client 2 ID</td>
+                            <td class="border px-4 py-2">Client 2 Secret</td>
+                            <td class="border px-4 py-2"></td>
+
+                          
+                        </tr>
+                        <!-- End row -->
+                    </tbody>
+                </table>
+                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Activate
+                </button>
+                <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4">
+                    Delete Selected
+                </button>
+            </div>
+
+        </div>
+    </div>
+    
+    <div class="p-4 sm:ml-64 mt-4">
+        <div id="Jobs"class="anchor-offset flex items-center justify-left h-24 mb-4 mt-16 rounded-md text-white bg-gray-800">
+            <p class="text-3xl text-bold px-5">
+                Account Settings
+            </p>
+
+        </div>
+        <br>
+        
+        <div class="w-full px-3 py-6">
+           
+           
+            
+        </div>
+        
+    </div>
+        
+        {% if messages %}
+   
+                {% for message in messages %}
+                <div id="alert" class="alert alert-{{ message.tags }} pr-10 bg-blue-500 text-white px-4 py-3 rounded absolute bottom-0 right-0 z-50" role="alert">
+                    <span class="block sm:inline">{{ message }}</span>
+                    <script>console.log('{{ message }}')</script>
+                    <span class="absolute top-0 bottom-0 right-0 px-4 py-3 closealertbutton" onclick="closeAlert()">
+                        <svg class="fill-current h-6 w-6 text-white" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"></path></svg>
+                    </span>
+                </div>
+                <script>closeAlertTimer()</script>
+            {% endfor %}
+        {% endif %}
+    
+    <footer class="bg-white rounded-lg m-4 bg-gray-800">
+        <div class="w-full mx-auto max-w-screen-xl p-4 items-center justify-between">
+        <span class="text-sm sm:text-center text-white">© 2023 <a href="https://cloudwarriors.ai/" class="hover:underline">Cloud Warriors LLC</a>. All Rights Reserved.
+            </span>
+        </div>
+    </footer>
+    
+    </div>  
+
+  
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+</body>
+</html>
+
+
+<script>
+    window.addEventListener('load', function() {
+        sortableTable();
+    });
+</script>
