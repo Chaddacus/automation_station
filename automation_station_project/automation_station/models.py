@@ -4,11 +4,32 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 import uuid
 
+class ZoomAuthServerToServer(models.Model):
+    name = models.CharField(max_length=255)
+    account_id = models.CharField(max_length=255)
+    client_id = models.CharField(max_length=255)
+    client_secret = models.CharField(max_length=255)
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='ZoomAuthServerToServer'
+    )
+    team = models.ManyToManyField(Group, related_name='ZoomAuthServerToServer')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
+    
 class CustomUserManager(BaseUserManager):
+    
+    
+
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
@@ -25,6 +46,7 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
+    active_auth = models.OneToOneField(ZoomAuthServerToServer, on_delete=models.SET_NULL, null=True, related_name='+')
     email = models.EmailField(unique=True)
     
     is_active = models.BooleanField(default=True)
@@ -59,6 +81,7 @@ class ZoomPhoneQueue(models.Model):
         return f"{self.department} - {self.site_id}"
         
 
+    
 class Job(models.Model):
     STATUS_CHOICES = (
         ('scheduled', 'Scheduled'),

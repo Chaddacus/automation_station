@@ -1,4 +1,5 @@
 {% load static %}
+{% load dict_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -130,34 +131,24 @@
                         </thead>
                     <tbody id="sortable-table-body">
                         <!-- Repeat this row for each job -->
-                        <tr>
+                        
+                        <!-- End row -->
+                         <!-- Repeat this row for each job -->
+                         {% for server in servertoserver %}
+                         <tr data->
                             <td class="border px-4 py-2">
                                 <input type="checkbox" class="job-select">
                             </td>
-                            <td class="border px-4 py-2">Alpha Team</td>
-                            <td class="border px-4 py-2">Client 1</td>
-                            <td class="border px-4 py-2">Account 1 ID</td>
-                            <td class="border px-4 py-2">Client 1 ID</td>
-                            <td class="border px-4 py-2">Client 1 Secret</td>
+                            <td class="border px-4 py-2"> {{ matching_team|get_item:server }}</td>
+                            <td class="border px-4 py-2">{{server.name}}</td>
+                            <td class="border px-4 py-2">{{server.account_id}}</td>
+                            <td class="border px-4 py-2">{{server.client_id}}</td>
+                            <td class="border px-4 py-2">{{server.client_secret}}</td>
                             <td class="border px-4 py-2">X</td>
 
                           
                         </tr>
-                        <!-- End row -->
-                         <!-- Repeat this row for each job -->
-                         <tr>
-                            <td class="border px-4 py-2">
-                                <input type="checkbox" class="job-select">
-                            </td>
-                            <td class="border px-4 py-2">Bravo Team</td>
-                            <td class="border px-4 py-2">Client 2</td>
-                            <td class="border px-4 py-2">Account 2 ID</td>
-                            <td class="border px-4 py-2">Client 2 ID</td>
-                            <td class="border px-4 py-2">Client 2 Secret</td>
-                            <td class="border px-4 py-2"></td>
-
-                          
-                        </tr>
+                        {% endfor %}
                         <!-- End row -->
                     </tbody>
                 </table>

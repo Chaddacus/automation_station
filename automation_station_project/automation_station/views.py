@@ -16,7 +16,10 @@ from django.contrib.auth import views as auth_views
 from django.contrib import messages
 
 from django.contrib.contenttypes.models import ContentType
-from .models import ZoomPhoneQueue, Job, JobCollection
+from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer
+from automation_station_project.tasks import add
+
+from time import sleep
 from django.utils import timezone
 from django.conf import settings
 
@@ -26,6 +29,9 @@ from decouple import config
 
 from io import StringIO
 from .models import Job
+from .models import Job
+
+
 
 
 
@@ -92,22 +98,44 @@ def zp_call_queue_create(request):
 
 @login_required
 def index(request):
-     return render(request, 'index.html')
+    result = add.delay(4, 4)
+    #sleep(10)
+    print(result.ready())  # Prints True if the task has finished
+    print(result.result)  # Prints the task's result, or the exception if the task failed
+     
+     
+    return render(request, 'index.html')
 
 
 @login_required
 def jobs(request):
-     logger.critical("jobs")
-     user_id = request.user.id
-     jobs = Job.objects.filter(user=request.user).annotate(rows_count=Count('Collection'))
-     return render(request, 'jobs.html', {'jobs': jobs})
+    logger.critical("jobs")
+    user_id = request.user.id
+    jobs = Job.objects.filter(user=request.user).exclude(status__in=['executed', 'deleted']).annotate(rows_count=Count('Collection'))
+    completed_jobs = Job.objects.filter(user=request.user,status='executed').annotate(rows_count=Count('Collection'))
+    return render(request, 'jobs.html', {'jobs': jobs, 'completed_jobs': completed_jobs} )
      
      
 
 @login_required
 def settings(request):
-     logger.critical("settings")
-     return render(request, 'settings.html')
+    logger.critical("settings")
+    logging.critical(request.user)
+    user_groups = request.user.groups.all()
+    logger.critical(user_groups)
+    servertoserver = ZoomAuthServerToServer.objects.filter(team__in=user_groups)
+    logger.critical(servertoserver)
+    # Get the first matching team for each ZoomAuthServerToServer instance
+    matching_teams = {server: server.team.filter(id__in=user_groups).first() for server in servertoserver}
+    logger.critical("here" +str(matching_teams))
+    
+    # Get the first item in the dictionary
+    if matching_teams:
+        first_key, first_value = next(iter(matching_teams.items()))
+        logger.critical(f"First Server: {first_key}, First Team: {first_value}")
+   
+
+    return render(request, 'settings.html', {'servertoserver': servertoserver, 'matching_team': matching_teams})
 
 def zoomlogin(request):
      authorization_url, state = zoom.authorization_url(AUTHORIZATION_URL)

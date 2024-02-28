@@ -1,0 +1,45 @@
+{% load static %}
+           
+           
+            <table  id="completed-jobs" class="w-full text-left table-auto">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-2 bg-blue-500 text-white">
+                            <input type="checkbox" id="select-all">
+                        </th>
+                        <th class="px-4 py-2 bg-blue-500 text-white">Job Name1</th>
+                        <th class="px-4 py-2 bg-blue-500 text-white">Total Records</th>
+                        <th class="px-4 py-2 bg-blue-500 text-white">Records Completed</th>
+                        <th class="px-4 py-2 bg-blue-500 text-white">Completed Records</th>
+                        <th class="px-4 py-2 bg-blue-500 text-white">Execution Time</th>
+                        
+                        <th class="px-4 py-2 bg-blue-500 text-white">Log</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in completed_jobs %}
+                            <tr data-guid={{job.job_id}} data-status={{ job.get_status_display }}>
+                            <td class="border px-4 py-2">
+                                <input type="checkbox" class="job-select">
+                            </td>
+                            <td>{{ job.job_name }}</td>
+                            <td>{{ job.rows_count }}</td>
+                            <td>2</td>
+                            <td>{{ job.created_at }}</td>
+                            
+                            <td>{{ job.created_at }}</td>
+                            <td class="border px-4 py-2">
+                                download log
+                            </td>
+
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">No jobs found</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            
+            

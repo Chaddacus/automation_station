@@ -15,6 +15,12 @@ import os
 from pathlib import Path
 from decouple import config
 
+CELERY_BROKER_URL = 'redis://automation-station-redis-1:6379/0'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -41,18 +47,31 @@ DB_PORT = config('DB_PORT', cast=int)
 ALLOWED_HOSTS = ['wondrous-radically-bluebird.ngrok-free.app']
 CSRF_TRUSTED_ORIGINS = ['https://wondrous-radically-bluebird.ngrok-free.app']
 
-
+ASGI_APPLICATION = "automation_station.routing.application"
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
+    'django_celery_results',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
     'automation_station',
+    'channels',
 ]
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.pubsub.RedisPubSubChannelLayer',
+        'CONFIG':{
+            "hosts": [('automation-station-redis-1', 6379)],
+        },
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -169,5 +188,11 @@ logging.config.dictConfig({
     'root': {
         'level': LOGGING_LEVEL,
         'handlers': ['console'],
+    },
+     'loggers': {
+        'daphne': {
+            
+            'level': 'DEBUG',
+        },
     },
 })

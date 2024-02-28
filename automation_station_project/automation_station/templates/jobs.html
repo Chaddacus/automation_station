@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.10.2/Sortable.min.js"></script>
     <link href="{% static 'index.css' %}" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.13.0/Sortable.min.js"></script>
-    <script src="{% static 'index.js' %}"></script>
+    <script src="{% static 'jobs.js' %}"></script>
     <!-- <script src="static/htmlscripts.js"></script> -->
     
     <title>Automation Station Demo</title>
@@ -27,7 +27,9 @@
     
     </script>
     {% endif %}
+
     <br>
+    
     {% if action_success == False %}
     <script>
         alert("Output: {{output | safe}}");
@@ -112,66 +114,13 @@
 
 
         
-        <div id="sort" class="flex flex-wrap items-center gap-2 mb-2">
-            <div class="w-full px-3 py-6">
-                <table  class="w-full text-left table-auto">
-                    <thead>
-                        <tr>
-                            <th class="px-4 py-2 bg-blue-500 text-white">
-                                <input type="checkbox" id="select-all">
-                            </th>
+        
 
-                            <th class="px-4 py-2 bg-blue-500 text-white">Job Type</th>
-                            <th class="px-4 py-2 bg-blue-500 text-white">Time of Creation</th>
-                            <th class="px-4 py-2 bg-blue-500 text-white">Number of Records</th>
-                            <th class="px-4 py-2 bg-blue-500 text-white action-header">Action <span id="jobTableInfo" data-tooltip="Click and drag elements to re-order" class="tooltip-trigger">?</span></th>                        </tr>
-                    </thead>
-                    <tbody id="sortable-table-body">
-                        <!-- Repeat this row for each job -->
-                        <tr>
-                            <td class="border px-4 py-2">
-                                <input type="checkbox" class="job-select">
-                            </td>
-                            <td class="border px-4 py-2">Job Type 1</td>
-                            <td class="border px-4 py-2">12:00 PM</td>
-                            <td class="border px-4 py-2">100</td>
-                            <td class="border px-4 py-2">
-                                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                    Run
-                                </button>
-                            </td>
-                        </tr>
-                        <!-- End row -->
-                         <!-- Repeat this row for each job -->
-                         <tr>
-                            <td class="border px-4 py-2">
-                                <input type="checkbox" class="job-select">
-                            </td>
-                            <td class="border px-4 py-2">Job Type 2</td>
-                            <td class="border px-4 py-2">12:00 PM</td>
-                            <td class="border px-4 py-2">100</td>
-                            <td class="border px-4 py-2">
-                                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                    Run
-                                </button>
-                            </td>
-                        </tr>
-                        <!-- End row -->
-                    </tbody>
-                </table>
-                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4">
-                    Run Selected
-                </button>
-                <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4">
-                    Delete Selected
-                </button>
-            </div>
-
-            <table  class="w-full text-left table-auto">
+            <table  id="jobs" class="job-table w-full text-left table-auto">
                 <thead>
                     <tr>
                         <th class="px-4 py-2 bg-blue-500 text-white">
-                            <input type="checkbox" id="select-all">
+                            <input type="checkbox" class="select-all">
                         </th>
 
                         <th class="px-4 py-2 bg-blue-500 text-white">Job Name</th>
@@ -182,9 +131,9 @@
                         <th class="px-4 py-2 bg-blue-500 text-white">Created At</th>
                         <th class="px-4 py-2 bg-blue-500 text-white action-header">Action <span id="jobTableInfo" data-tooltip="Click and drag elements to re-order" class="tooltip-trigger">?</span></th>
                 </thead>
-                <tbody>
+                <tbody id="sortable-table-body">
                     {% for job in jobs %}
-                        <tr>
+                        <tr data-guid={{job.job_id}}>
                             <td class="border px-4 py-2">
                                 <input type="checkbox" class="job-select">
                             </td>
@@ -195,7 +144,7 @@
                             <td>{{ job.execution_time }}</td>
                             <td>{{ job.created_at }}</td>
                             <td class="border px-4 py-2">
-                                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                <button class="websocket-run bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" data-command='run-job' data-guid={{job.job_id}}>
                                     Run
                                 </button>
                             </td>
@@ -209,10 +158,10 @@
                 </tbody>
             </table>
 
-            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4">
+            <button id="websocket-run-selected" class="websocket-run-selected bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4">
                 Run Selected
             </button>
-            <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4">
+            <button id="websocket-delete-selected"  class="websocket-delete-selected bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4">
                 Delete Selected
             </button>
 
@@ -236,33 +185,46 @@
         <div class="w-full px-3 py-6">
            
            
-            <table  class="w-full text-left table-auto">
+            <table  id="completed-jobs" class="w-full text-left table-auto">
                 <thead>
                     <tr>
                         <th class="px-4 py-2 bg-blue-500 text-white">
                             <input type="checkbox" id="select-all">
                         </th>
-                        <th class="px-4 py-2 bg-blue-500 text-white"> Job Type</th>
-                        <th class="px-4 py-2 bg-blue-500 text-white">Completed Time</th>
-                        <th class="px-4 py-2 bg-blue-500 text-white">Number of Records</th>
+                        <th class="px-4 py-2 bg-blue-500 text-white">Job Name</th>
+                        <th class="px-4 py-2 bg-blue-500 text-white">Total Records</th>
+                        <th class="px-4 py-2 bg-blue-500 text-white">Records Completed</th>
+                        <th class="px-4 py-2 bg-blue-500 text-white">Completed Records</th>
+                        <th class="px-4 py-2 bg-blue-500 text-white">Execution Time</th>
+                        
                         <th class="px-4 py-2 bg-blue-500 text-white">Log</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td class="border px-4 py-2">
-                            <input type="checkbox" class="job-select">
-                        </td>
+                    {% for job in completed_jobs %}
+                            <tr data-guid={{job.job_id}}>
+                            <td class="border px-4 py-2">
+                                <input type="checkbox" class="job-select">
+                            </td>
+                            <td>{{ job.job_name }}</td>
+                            <td>{{ job.rows_count }}</td>
+                            <td>2</td>
+                            <td>{{ job.created_at }}</td>
+                            
+                            <td>{{ job.created_at }}</td>
+                            <td class="border px-4 py-2">
+                                download log
+                            </td>
 
-                        <td class="border px-4 py-2">Job 1</td>
-                        <td class="border px-4 py-2">2022-01-01 12:00:00</td>
-                        <td class="border px-4 py-2">100</td>
-                        <td class="border px-4 py-2"><a href="log1.txt">View Log</a></td>
-                    </tr>
-                    <!-- Add more rows as needed -->
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">No jobs found</td>
+                        </tr>
+                    {% endfor %}
                 </tbody>
             </table>
-            <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4">
+            <button class="websocket-delete-selected bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4">
                 Delete Selected
             </button>
         </div>
@@ -302,5 +264,7 @@
 <script>
     window.addEventListener('load', function() {
         sortableTable();
+        jobSocket();
+        
     });
 </script>
