@@ -1,12 +1,15 @@
 version: '3'
 
 services:
+
   redis:
     image: redis:latest
+    container_name: redis
     ports:
       - "6379:6379"
 
   celery:
+    container_name: celery
     build: .
     command: celery -A automation_station_project worker --loglevel=info
     #command : sleep 1000
