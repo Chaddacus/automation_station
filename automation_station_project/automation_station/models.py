@@ -7,6 +7,9 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
+from zoomus import ZoomClient
+from automation_station_project.helpers import init_zoom_client
 import uuid
 
 class ZoomAuthServerToServer(models.Model):
@@ -22,6 +25,28 @@ class ZoomAuthServerToServer(models.Model):
     )
     team = models.ManyToManyField(Group, related_name='ZoomAuthServerToServer')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Add your validation logic here
+        fields_to_check = [self.account_id, self.client_id, self.client_secret]
+
+        for field in fields_to_check:
+            if not field:
+                raise ValidationError("Field cannot be empty")
+            if not field.isalnum():
+                raise ValidationError("Field can only contain letters and numbers")
+
+        # Validate Zoom credentials
+        try:
+            client = init_zoom_client(self.client_id, self.client_secret, self.account_id)
+            client_request = client.user.me()
+            if client_request.status_code not in [200,201,204]:
+                raise ValidationError("Invalid Zoom credentials")
+        except Exception as e:
+            raise ValidationError(f"Failed to communicate with Zoom: {e}")
+
+        # Call the "real" save() method.
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return self.name
