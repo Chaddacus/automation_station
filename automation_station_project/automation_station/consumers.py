@@ -130,7 +130,7 @@ class JobConsumer(AsyncWebsocketConsumer):
             job.status = "progress"
             # Add the logic to run the selected items
             logger.critical(f"Saving job progress {job.job_id}")
-            #job.save()
+            job.save()
             logging.critical(f"Running job {job.job_id}")
             logger.critical(self.user.active_auth)
             zoom_auth = self.scope['user'].active_auth
@@ -140,10 +140,13 @@ class JobConsumer(AsyncWebsocketConsumer):
             related_objects = self.extract_related_objects(data)
             logger.critical(related_objects)
             keys_to_remove = ['user']
-            formated_data = self.format_data(related_objects, keys_to_remove)
-            logger.critical("here "+str(formated_data))
+            formatted_data = self.format_data(related_objects, keys_to_remove)
+            logger.critical("here "+str(formatted_data))
             client = init_zoom_client(zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
-            create_call_queue.delay(guid, formated_data, zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
+            create_call_queue.delay(guid, formatted_data, zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
+            job.status = "executed"
+            job.save()
+
             #create_call_queue(data, zoomclientId, zoomclientSecret, zoomaccountId):
             #get the active auth from the active user
             
