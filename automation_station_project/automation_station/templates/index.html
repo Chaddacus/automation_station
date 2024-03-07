@@ -110,7 +110,7 @@
         <div id="zplayout" class="flex flex-wrap items-center gap-2 mb-2">
             <div class="justify-center rounded mx-auto">
                 <div class="bg-gray-700 rounded-md border border-solid border-gray-700 p-4 mx-auto">
-                    <span id="createCallQueueInfo" data-tooltip="Click and drag elements to re-order" class="tooltip-trigger" style="color: white; float: right; font-weight: bold; font-size: larger;">?</span>
+                    <span id="createCallQueueInfo" data-tooltip="Create a zoom phone call queue. Use the supplied sample csv file." class="tooltip-trigger" style="color: white; float: right; font-weight: bold; font-size: larger;">?</span>
                     <h1 class="text-3xl text-white font-bold mx-4 my-4">Create Call Queues</h1>
                     <form method="POST" action="{% url 'zp_call_queue_create' %}"enctype="multipart/form-data" class="w-auto border-black border-solid">
                         {% csrf_token %}
@@ -118,7 +118,7 @@
                             <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
                         </div>
                         <input type="submit" id="upload-button" value="Job Create" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
-                        <a href="" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                        <a href="{% static 'sample_csvs/zp_create_callqueue_sample.csv' %}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
                     </form>
                 </div>
             </div>

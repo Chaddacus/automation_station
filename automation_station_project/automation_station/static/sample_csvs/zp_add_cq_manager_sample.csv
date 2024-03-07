@@ -1,0 +1,4 @@
+user_id,user_email,role_id,country_iso_code,client_integration,user_access,region_id,enable,max_agent_load,concurrent_message_capacity
+1,user1@example.com,1,US,Integration1,Full Access,1,True,10,100
+callQueueId,member_id
+,

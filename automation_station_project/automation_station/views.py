@@ -30,6 +30,7 @@ from decouple import config
 from io import StringIO
 from .models import Job
 from .models import Job
+from automation_station_project.helpers import site_id, init_zoom_client
 
 
 
@@ -41,6 +42,7 @@ logger = logging.getLogger(__name__)
 
 CLIENT_ID = config('CLIENT_ID')
 CLIENT_SECRET = config('CLIENT_SECRET')
+ACCOUNT_ID = config('ACCOUNT_ID')
 REDIRECT_URI = config('REDIRECT_URI')
 TOKEN_URL= config('TOKEN_URL')
 CALLBACK_URL = config('CALLBACK_URL')
@@ -63,23 +65,29 @@ def zp_call_queue_create(request):
         csv_file = request.FILES['csv_file']
         csv_data = csv_file.read().decode('utf-8')
 
-        # Create a single Job instance
-        job = Job.objects.create(
-            job_name="zoom phone queue create",
-            user=request.user,
-            status='scheduled',
-            scheduled_time=timezone.now(),
-            execution_time=None,  # or set a specific time if needed
-        )
-
         reader = csv.DictReader(csv_data.splitlines())
+
+        job_created = False
+        job = None
+
         for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="zoom phone queue create",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
             # Create a ZoomPhoneSite instance for each row
             zoom_phone_queue = ZoomPhoneQueue.objects.create(
                 user=request.user,
                 cost_center=row['cost_center'],
                 department=row['department'],
-                site_id=row['site_id'],
+                site_id=row['site_name'],
                 extension_number=row['extension_number'],
             )
 
@@ -93,7 +101,11 @@ def zp_call_queue_create(request):
                 object_id=zoom_phone_queue.pk,
             )
 
-        messages.success(request, "The Phone call queue Create Job and associated collections have been successfully added")
+        if job_created:
+            messages.success(request, "The Phone call queue Create Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
         return render(request, 'index.html')  # Redirect to a success page or another relevant view
 
 @login_required

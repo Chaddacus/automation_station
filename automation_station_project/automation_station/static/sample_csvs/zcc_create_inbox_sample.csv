@@ -1,0 +1,2 @@
+inbox_name,inbox_description,inbox_type (voicemail is default),inbox_content_storage_location_code (US|CA|etc.),voicemail,soft_delete,soft_delete_days_limit,voicemail_time_limit,delete_voicemail_days_limit,voicemail_transcription,voicemail_notification_by_email,enable,include_voicemail_file,include_voicemail_transcription,forward_voicemail_to_emails,emails
+testInbox,,,,,,,,,,,,,,,
