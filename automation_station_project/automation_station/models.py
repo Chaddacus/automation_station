@@ -30,12 +30,6 @@ class ZoomAuthServerToServer(models.Model):
         # Add your validation logic here
         fields_to_check = [self.account_id, self.client_id, self.client_secret]
 
-        for field in fields_to_check:
-            if not field:
-                raise ValidationError("Field cannot be empty")
-            if not field.isalnum():
-                raise ValidationError("Field can only contain letters and numbers")
-
         # Validate Zoom credentials
         try:
             client = init_zoom_client(self.client_id, self.client_secret, self.account_id)
