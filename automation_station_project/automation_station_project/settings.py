@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 from decouple import config
 
-CELERY_BROKER_URL = 'redis://automation-station-redis-1:6379/0'
+CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
@@ -44,8 +44,8 @@ DB_HOST = config('DB_HOST')
 DB_PORT = config('DB_PORT', cast=int)
 
 
-ALLOWED_HOSTS = ['wondrous-radically-bluebird.ngrok-free.app']
-CSRF_TRUSTED_ORIGINS = ['https://wondrous-radically-bluebird.ngrok-free.app']
+ALLOWED_HOSTS = ['dev.auto.cloudwarriors.ai']
+CSRF_TRUSTED_ORIGINS = ['https://dev.auto.cloudwarriors.ai']
 
 ASGI_APPLICATION = "automation_station.routing.application"
 # Application definition
@@ -68,7 +68,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.pubsub.RedisPubSubChannelLayer',
         'CONFIG':{
-            "hosts": [('automation-station-redis-1', 6379)],
+            "hosts": [('redis', 6379)],
         },
     },
 }

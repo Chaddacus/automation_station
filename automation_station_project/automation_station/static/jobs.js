@@ -1,7 +1,7 @@
 console.log('jobs.js');
 
 // Note that the path is the one you specified in your routing configuration
-const socket = new WebSocket('wss://wondrous-radically-bluebird.ngrok-free.app/ws/con/');
+const socket = new WebSocket('wss://dev.auto.cloudwarriors.ai/ws/con/');
 
 socket.onmessage = function(e) {
 
