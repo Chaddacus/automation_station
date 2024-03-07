@@ -1,0 +1,2 @@
+"calling_plan_code (Us/ca unlimited: 200, Us/ca metered: 100, Zoom one business plus with us/ca: 50200)",country_iso_code(US | CA | etc.),display_name(min 3 characters),extension_number,site_name,timezone(America/Los_Angeles | America/New_York | UTC | etc.)
+200,US,CommonTest1,765,Main Site,America/Los_Angeles
