@@ -1,6 +1,6 @@
 import requests
 import logging
-import csv
+import csv, json
 
 from django.shortcuts import render
 from django.http import HttpResponse
@@ -230,8 +230,7 @@ def download_data(request, job_id):
     # Write the job data to the response
     for log in job_logs:
         formatted_time = log.execution_time.strftime('%Y-%m-%d %H:%M:%S')
-        response.write(f"Execution Time: {formatted_time}, Job Name: {job.job_name}, Response Data: {log.response_data}\n")
+        response_data = json.dumps(log.response_data)  # Convert response_data to a string
+        response.write(f"Execution Time: {formatted_time}, Job Name: {job.job_name}, Response Data: {response_data}\n")
 
     return response
-
-    
