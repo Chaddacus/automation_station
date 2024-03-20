@@ -29,7 +29,7 @@ from decouple import config
 
 from io import StringIO
 from .models import Job
-from .models import Job
+from .models import JobExecutionLogs
 from automation_station_project.helpers import site_id, init_zoom_client
 
 
@@ -195,7 +195,6 @@ def callback(request):
    
     token = zoom.fetch_token(TOKEN_URL, client_secret=CLIENT_SECRET,
                              authorization_response=redirect_uri)
-    logger.critical(token)
 
     request.session['zoom_token'] = token['access_token']
     
@@ -216,5 +215,23 @@ def csv_to_dict(csv_data):
 
 
 
+
+def download_data(request, job_id):
+    # Get the job
+    job = Job.objects.get(id=job_id)
+
+    # Get the job logs
+    job_logs = JobExecutionLogs.objects.filter(job_id=job_id)
+
+    # Create a response
+    response = HttpResponse(content_type='text/plain')
+    response['Content-Disposition'] = f'attachment; filename={job.job_name}.txt'
+
+    # Write the job data to the response
+    for log in job_logs:
+        formatted_time = log.execution_time.strftime('%Y-%m-%d %H:%M:%S')
+        response.write(f"Execution Time: {formatted_time}, Job Name: {job.job_name}, Response Data: {log.response_data}\n")
+
+    return response
 
     

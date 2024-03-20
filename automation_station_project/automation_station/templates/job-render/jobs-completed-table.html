@@ -29,7 +29,7 @@
                             
                             <td>{{ job.created_at }}</td>
                             <td class="border px-4 py-2">
-                                download log
+                                <a href="{% url 'download_data' job.id %}">Log file</a>
                             </td>
 
                         </tr>
