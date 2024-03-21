@@ -98,7 +98,7 @@ class ZoomPhoneQueue(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"{self.department} - {self.site_id}"
+        return "create_call_queue"
         
 
     
