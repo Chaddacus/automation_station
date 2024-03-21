@@ -13,5 +13,6 @@ urlpatterns = [
     path('zp_call_queue_create', views.zp_call_queue_create, name='zp_call_queue_create'),
     path('jobs', views.jobs, name='jobs'),
     path('settings', views.settings, name='settings'),
+    path('download_data/<int:job_id>/', views.download_data, name='download_data'),
     re_path('.*', TemplateView.as_view(template_name='index.html')),
 ]
