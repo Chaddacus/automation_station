@@ -1,5 +1,5 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import ZoomPhoneQueue, Job, JobCollection
+from .models import ZoomPhoneQueue, Job, JobCollection, JobExecutionLogs
 from django.db.models import Count
 from django.core import serializers
 from django.template.loader import render_to_string
@@ -9,8 +9,9 @@ from automation_station_project.helpers import init_zoom_client
 from django.forms.models import model_to_dict
 import json
 import logging
-
-
+import time
+from asgiref.sync import sync_to_async
+from channels.db import database_sync_to_async
 logger = logging.getLogger(__name__)
 
 class JobConsumer(AsyncWebsocketConsumer):
@@ -65,12 +66,33 @@ class JobConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard("job_group", self.channel_name)
         pass
 
+    @database_sync_to_async
+    def get_job_logs(self, job_id):
+        return JobExecutionLogs.objects.filter(job_id=job_id)
+
+    @database_sync_to_async
+    def update_log(self, log, output):
+        log.response_data = output
+        log.save()
+
     async def job_message(self, event):
         message = event['message']
         
         logging.critical(f"Received message!!!!!: {message}")
+
+        # Extract the guid and job_result from the message
+        guid = message['guid']
+        output = message['output']
+
+        # Get the job
+        job = await sync_to_async(Job.objects.get)(job_id=guid)
+
+        # Update the job_logs
+        job_logs = await self.get_job_logs(job.id)
+        job_logs = await sync_to_async(list)(job_logs)
+        for log in job_logs:
+            await self.update_log(log, output)
         
-    
     
     async def receive(self, text_data):
         
@@ -140,7 +162,12 @@ class JobConsumer(AsyncWebsocketConsumer):
             job.save()
             
             logging.critical(f"Running job {job.job_id}")
-            
+
+
+            job_logs = JobExecutionLogs(job_id=job.id, status='progress')
+            job_logs.save()
+
+
             logger.critical(self.user.active_auth)
             
             zoom_auth = self.scope['user'].active_auth
@@ -162,6 +189,7 @@ class JobConsumer(AsyncWebsocketConsumer):
             logger.critical("here "+str(formatted_data))
             
             client = init_zoom_client(zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
+
             
             #create_call_queue.delay(guid, formatted_data, zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
             
@@ -174,9 +202,13 @@ class JobConsumer(AsyncWebsocketConsumer):
                     zoom_auth.client_secret,
                     zoom_auth.account_id
                 )
+
             
             job.status = "executed"
             job.save()
+            job_logs.status = "executed"
+            job_logs.save()
+
 
             #create_call_queue(data, zoomclientId, zoomclientSecret, zoomaccountId):
             #get the active auth from the active user
