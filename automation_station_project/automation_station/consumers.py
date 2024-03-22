@@ -12,6 +12,7 @@ import logging
 import time
 from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
+from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 class JobConsumer(AsyncWebsocketConsumer):
@@ -90,6 +91,8 @@ class JobConsumer(AsyncWebsocketConsumer):
         job_logs = await sync_to_async(list)(job_logs)
         for log in job_logs:
             await self.update_log(log, output)
+        job.status = "executed"
+        await sync_to_async(job.save)()
         
     
     async def receive(self, text_data):
@@ -171,8 +174,8 @@ class JobConsumer(AsyncWebsocketConsumer):
             client = init_zoom_client(zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
             create_call_queue.delay(guid, formatted_data, zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
             
-            job.status = "executed"
-            job.save()
+            # job.status = "executed"
+            # job.save()
             job_logs.status = "executed"
             job_logs.save()
 
@@ -196,6 +199,9 @@ class JobConsumer(AsyncWebsocketConsumer):
             job = Job.objects.get(job_id=guid)
             job.status = "executed"
             job.save()
+
+            cache.set(f'stop_task_{guid}', True)
+            print(cache.get(f'stop_task_{guid}'))  # Should print True
         
         # Add the logic to stop the selected items
         jobs, completed_jobs = self.get_table_data()

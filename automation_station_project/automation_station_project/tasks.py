@@ -3,6 +3,7 @@
 from __future__ import absolute_import, unicode_literals
 from celery import shared_task
 from datetime import datetime
+import time
 import json
 
 
@@ -12,6 +13,7 @@ import logging
 
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from django.core.cache import cache
 
 
 logger = logging.getLogger(__name__)
@@ -45,16 +47,20 @@ def create_call_queue(guid, data, zoomclientId, zoomclientSecret, zoomaccountId)
 
         client = init_zoom_client(zoomclientId, zoomclientSecret, zoomaccountId)
         for row in data:
-            #client.phone.call_queues_create(name=row[0], description=row[1], extension_number=row[2])
-            # Process each row of the CSV file
-            # Example: print(row)
+
+            if cache.get(f'stop_task_{guid}'):
+                output.append("Task Stopped")
+                break
+
             jobcollection = row.pop(0)
             logger.critical(client)
             sId = site_id(row[2], client)
             client_request = client.phone.call_queues_create(name=row[0],site_id=sId,extension_number=row[3])
             
+            logger.critical("Processing Call Queue "+row[0])      
+
             #output.append(client_request.json())
-        
+
             logger.critical("status code "+ str(client_request.status_code))
             if client_request.status_code == 201:
                 logger.critical("Call Queue Created Successfully")
@@ -79,6 +85,8 @@ def create_call_queue(guid, data, zoomclientId, zoomclientSecret, zoomaccountId)
             channel_layer = get_channel_layer()
             
             logging.critical(channel_layer)
+
+            #time.sleep(5)
             
         results = {
             "guid": guid,
