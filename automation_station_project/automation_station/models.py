@@ -30,6 +30,7 @@ class ZoomAuthServerToServer(models.Model):
         # Add your validation logic here
         fields_to_check = [self.account_id, self.client_id, self.client_secret]
 
+
         # Validate Zoom credentials
         try:
             client = init_zoom_client(self.client_id, self.client_secret, self.account_id)
@@ -97,7 +98,7 @@ class ZoomPhoneQueue(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"{self.department} - {self.site_id}"
+        return "create_call_queue"
         
 
     

@@ -34,11 +34,13 @@ class JobConsumer(AsyncWebsocketConsumer):
         results = []
         for collection in collections:
             collection_dict = model_to_dict(collection)
+            function_name = collection.content_type.model
+            logger.critical("function name : "+str(collection.content_object))
             related_object = collection.content_object
             related_object_dict = model_to_dict(related_object) if related_object else None
             collection_dict['related_object'] = related_object_dict
             results.append(collection_dict)
-        return results
+        return results, str(collection.content_object)
     
     def extract_related_objects(self,job_collections):
         return [collection['related_object'] for collection in job_collections if collection['related_object'] is not None]
@@ -143,43 +145,72 @@ class JobConsumer(AsyncWebsocketConsumer):
         }))
             
         # Add more commands as needed
-        
+
     @sync_to_async
-    
+
     def run_selected(self, data):
         logger.critical(f"Running selected items: {data}")
         guids = data['guids']
         self.user = self.scope["user"]
+
         for guid in guids:
+
             job = Job.objects.get(job_id=guid)
+
             job.status = "progress"
+
             # Add the logic to run the selected items
             logger.critical(f"Saving job progress {job.job_id}")
+
             job.save()
+
             logging.critical(f"Running job {job.job_id}")
+
 
             job_logs = JobExecutionLogs(job_id=job.id, status='progress')
             job_logs.save()
 
+
             logger.critical(self.user.active_auth)
+
             zoom_auth = self.scope['user'].active_auth
+
             logger.critical(zoom_auth)
-            data = self.get_job_collections(job)
+
+            data,function_name = self.get_job_collections(job)
+
             logger.critical(data)
+
             related_objects = self.extract_related_objects(data)
+
             logger.critical(related_objects)
+
             keys_to_remove = ['user']
+
             formatted_data = self.format_data(related_objects, keys_to_remove)
+
             logger.critical("here "+str(formatted_data))
+
             client = init_zoom_client(zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
-            create_call_queue.delay(guid, formatted_data, zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
-            
+
+
+            #create_call_queue.delay(guid, formatted_data, zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
+
+
+            logger.critical("function name : "+function_name)
+
+            globals()[function_name].delay(guid,
+                    formatted_data,
+                    zoom_auth.client_id,
+                    zoom_auth.client_secret,
+                    zoom_auth.account_id
+                )
+
+
             # job.status = "executed"
             # job.save()
             job_logs.status = "executed"
             job_logs.save()
-
-
             #create_call_queue(data, zoomclientId, zoomclientSecret, zoomaccountId):
             #get the active auth from the active user
             
