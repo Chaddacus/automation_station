@@ -20,6 +20,7 @@ socket.onmessage = function(e) {
         JobButton();
     }
 };
+
  socket.onclose = function(e) {
      console.error('Chat socket closed - will appear during inital page load, but should not appear after that.');
  };
@@ -154,8 +155,8 @@ deleteSelectedButtons.forEach(button => {
                 let status  = row.dataset.status
                 console.log(status);
                 
-                if (status !== 'Scheduled' && status !== 'Executed') {
-                    alert('Only scheduled or completed jobs can be deleted');
+                if (status !== 'Scheduled' && status !== 'Executed' && status !== 'Failed') {
+                    alert('Only scheduled, failed, and completed jobs can be deleted');
                     alertTrigger = true;
                     return;
                 }
