@@ -191,6 +191,7 @@ class JobConsumer(AsyncWebsocketConsumer):
 
             job.save()
 
+
             logging.critical(f"Running job {job.job_id}")
 
 
@@ -219,7 +220,6 @@ class JobConsumer(AsyncWebsocketConsumer):
             logger.critical("here "+str(formatted_data))
 
             client = init_zoom_client(zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
-
 
             #create_call_queue.delay(guid, formatted_data, zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
 
