@@ -87,7 +87,8 @@ class JobConsumer(AsyncWebsocketConsumer):
         guid = message['guid']
         output = message['output']
         job_result = message['job_result']
-
+        
+        
         # Get the job
         job = await sync_to_async(Job.objects.get)(job_id=guid)
     
@@ -110,17 +111,29 @@ class JobConsumer(AsyncWebsocketConsumer):
             jobcollection.status = "executed" if success else "failed"
             await database_sync_to_async(jobcollection.save)()
         logging.critical("Updated jobcollection statuses")
+
+        data, function_name = await sync_to_async(self.get_job_collections)(job)
+        logging.critical(data)
         
+        for job in data:
+            if job['status'] == 'scheduled':
+                try:
+                    jobcollection = await database_sync_to_async(JobCollection.objects.get)(id=job['id'])
+                    jobcollection.status = 'failed'
+                    job_log.response_data.append(f"\n[{job['related_object']['cost_center']}] with extension [{job['related_object']['extension_number']}] failed: task cancelled")
+                    await database_sync_to_async(jobcollection.save)()
+                except ObjectDoesNotExist:
+                    logging.error(f"JobCollection with id {job['id']} does not exist")
 
-            # Get the updated table data
-        jobs, completed_jobs = await sync_to_async(self.get_table_data)()
+        await database_sync_to_async(job_log.save)()
 
-        # Send an 'update-table' message with the updated table data
-        await self.send(text_data=json.dumps({
-            'type': 'update-table',
-            'jobs': jobs,
-            'completed_jobs': completed_jobs,
-        }))
+        message = {
+            'message': json.dumps({
+                'command': 'redraw'
+            })
+        }
+        logging.critical("Sending redraw command")
+        await self.receive(json.dumps(message))
         
         logging.critical("job_message method finished")
     
@@ -164,7 +177,8 @@ class JobConsumer(AsyncWebsocketConsumer):
             
         elif command == 'redraw':
             json_jobs_table, json_completed_jobs = await self.redraw()
-            
+            logging.critical("Redrawing table")
+
             await self.send(text_data=json.dumps({
             'command': 'update-table',
             'jobs': json_jobs_table,
