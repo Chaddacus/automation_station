@@ -99,6 +99,9 @@ class ZoomPhoneQueue(models.Model):
     
     def __str__(self):
         return "create_call_queue"
+    
+    def format_failed_collection(self):
+         return f"\n[{self.cost_center}] with extension [{self.extension_number}] failed: task cancelled"
         
 
     

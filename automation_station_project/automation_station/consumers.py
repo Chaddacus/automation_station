@@ -2,6 +2,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from .models import ZoomPhoneQueue, Job, JobCollection, JobExecutionLogs
 from django.db.models import Count
 from django.core import serializers
+from django.core.exceptions import ObjectDoesNotExist
+from django.apps import apps
 from django.template.loader import render_to_string
 from asgiref.sync import sync_to_async
 from automation_station_project.tasks import create_call_queue
@@ -16,7 +18,10 @@ from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 class JobConsumer(AsyncWebsocketConsumer):
-    
+
+    FUNCTION_TO_MODEL_MAP = {
+        'create_call_queue': 'ZoomPhoneQueue',
+    }
     
 
     def format_data(self, data, keys_to_remove):
@@ -120,7 +125,10 @@ class JobConsumer(AsyncWebsocketConsumer):
                 try:
                     jobcollection = await database_sync_to_async(JobCollection.objects.get)(id=job['id'])
                     jobcollection.status = 'failed'
-                    job_log.response_data.append(f"\n[{job['related_object']['cost_center']}] with extension [{job['related_object']['extension_number']}] failed: task cancelled")
+                    ModelClass = apps.get_model('automation_station', self.FUNCTION_TO_MODEL_MAP[function_name])
+                    related_object = await database_sync_to_async(ModelClass.objects.get)(id=job['related_object']['id'])
+                    collection_output = getattr(related_object, 'format_failed_collection')()
+                    job_log.response_data.append(collection_output)
                     await database_sync_to_async(jobcollection.save)()
                 except ObjectDoesNotExist:
                     logging.error(f"JobCollection with id {job['id']} does not exist")
