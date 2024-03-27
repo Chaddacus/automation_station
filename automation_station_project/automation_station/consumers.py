@@ -12,6 +12,7 @@ import logging
 import time
 from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
+from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 class JobConsumer(AsyncWebsocketConsumer):
@@ -45,13 +46,12 @@ class JobConsumer(AsyncWebsocketConsumer):
         return [collection['related_object'] for collection in job_collections if collection['related_object'] is not None]
     
     def get_table_data(self):
-    # Get the new data for the table
-    # This is just a placeholder - replace this with your actual code
-        
-        jobs = Job.objects.filter(user=self.scope["user"]).exclude(status__in=['executed', 'deleted']).annotate(rows_count=Count('Collection'))
-        completed_jobs = Job.objects.filter(user=self.scope["user"],status='executed').annotate(rows_count=Count('Collection'))
-        
-        #return render(request, 'jobs.html', {'jobs': jobs, 'completed_jobs': completed_jobs} )
+        # Get the new data for the table
+        # This is just a placeholder - replace this with your actual code
+
+        jobs = Job.objects.filter(user=self.scope["user"]).exclude(status__in=['executed', 'deleted', 'failed']).annotate(rows_count=Count('Collection'))
+        completed_jobs = Job.objects.filter(user=self.scope["user"], status__in=['executed', 'failed']).annotate(rows_count=Count('Collection'))
+
         jobs = render_to_string('job-render/jobs-table.html', {'jobs': jobs})
         completed_jobs = render_to_string('job-render/jobs-completed-table.html', {'completed_jobs': completed_jobs})
         return jobs, completed_jobs
@@ -71,28 +71,71 @@ class JobConsumer(AsyncWebsocketConsumer):
         return JobExecutionLogs.objects.filter(job_id=job_id)
 
     @database_sync_to_async
-    def update_log(self, log, output):
+    def update_log(self, log, output, status):
         log.response_data = output
+        log.status = status
         log.save()
 
+
     async def job_message(self, event):
+        logging.critical("job_message method started")
+
         message = event['message']
-        
-        logging.critical(f"Received message!!!!!: {message}")
+        logging.critical(f"Received message: {message}")
 
         # Extract the guid and job_result from the message
         guid = message['guid']
         output = message['output']
-
+        job_result = message['job_result']
+        
+        
         # Get the job
         job = await sync_to_async(Job.objects.get)(job_id=guid)
+    
+        # If the job status is not "failed", set it to "executed"
+        if job.status != "failed":
+            job.status = "executed"
+            await sync_to_async(job.save)()
 
-        # Update the job_logs
-        job_logs = await self.get_job_logs(job.id)
-        job_logs = await sync_to_async(list)(job_logs)
-        for log in job_logs:
-            await self.update_log(log, output)
+         # Update the job_logs
+        job_log = await sync_to_async(JobExecutionLogs.objects.get)(job_id=job.id)
         
+        await self.update_log(job_log, output, job.status)
+        logging.critical("Updated job_logs")   
+            
+      
+
+        # Update the status of each jobcollection based on job_result
+        for jobcollection_id, success in job_result.items():
+            jobcollection = await database_sync_to_async(JobCollection.objects.get)(id=jobcollection_id)
+            jobcollection.status = "executed" if success else "failed"
+            await database_sync_to_async(jobcollection.save)()
+        logging.critical("Updated jobcollection statuses")
+
+        data, function_name = await sync_to_async(self.get_job_collections)(job)
+        logging.critical(data)
+        
+        for job in data:
+            if job['status'] == 'scheduled':
+                try:
+                    jobcollection = await database_sync_to_async(JobCollection.objects.get)(id=job['id'])
+                    jobcollection.status = 'failed'
+                    job_log.response_data.append(f"\n[{job['related_object']['cost_center']}] with extension [{job['related_object']['extension_number']}] failed: task cancelled")
+                    await database_sync_to_async(jobcollection.save)()
+                except ObjectDoesNotExist:
+                    logging.error(f"JobCollection with id {job['id']} does not exist")
+
+        await database_sync_to_async(job_log.save)()
+
+        message = {
+            'message': json.dumps({
+                'command': 'redraw'
+            })
+        }
+        logging.critical("Sending redraw command")
+        await self.receive(json.dumps(message))
+        
+        logging.critical("job_message method finished")
     
     async def receive(self, text_data):
         
@@ -134,7 +177,8 @@ class JobConsumer(AsyncWebsocketConsumer):
             
         elif command == 'redraw':
             json_jobs_table, json_completed_jobs = await self.redraw()
-            
+            logging.critical("Redrawing table")
+
             await self.send(text_data=json.dumps({
             'command': 'update-table',
             'jobs': json_jobs_table,
@@ -142,25 +186,26 @@ class JobConsumer(AsyncWebsocketConsumer):
         }))
             
         # Add more commands as needed
-        
+
     @sync_to_async
-    
+
     def run_selected(self, data):
         logger.critical(f"Running selected items: {data}")
         guids = data['guids']
         self.user = self.scope["user"]
-        
+
         for guid in guids:
-            
+
             job = Job.objects.get(job_id=guid)
-            
+
             job.status = "progress"
-            
+
             # Add the logic to run the selected items
             logger.critical(f"Saving job progress {job.job_id}")
-            
+
             job.save()
-            
+
+
             logging.critical(f"Running job {job.job_id}")
 
 
@@ -169,33 +214,32 @@ class JobConsumer(AsyncWebsocketConsumer):
 
 
             logger.critical(self.user.active_auth)
-            
+
             zoom_auth = self.scope['user'].active_auth
-            
+
             logger.critical(zoom_auth)
-            
+
             data,function_name = self.get_job_collections(job)
-            
+
             logger.critical(data)
-            
+
             related_objects = self.extract_related_objects(data)
-            
+
             logger.critical(related_objects)
-            
+
             keys_to_remove = ['user']
-            
+
             formatted_data = self.format_data(related_objects, keys_to_remove)
-            
+
             logger.critical("here "+str(formatted_data))
-            
+
             client = init_zoom_client(zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
 
-            
             #create_call_queue.delay(guid, formatted_data, zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
-            
-            
+
+
             logger.critical("function name : "+function_name)
-            
+
             globals()[function_name].delay(guid,
                     formatted_data,
                     zoom_auth.client_id,
@@ -203,13 +247,9 @@ class JobConsumer(AsyncWebsocketConsumer):
                     zoom_auth.account_id
                 )
 
-            
-            job.status = "executed"
-            job.save()
-            job_logs.status = "executed"
-            job_logs.save()
 
-
+            # job.status = "executed"
+            # job.save()
             #create_call_queue(data, zoomclientId, zoomclientSecret, zoomaccountId):
             #get the active auth from the active user
             
@@ -227,8 +267,14 @@ class JobConsumer(AsyncWebsocketConsumer):
         
         for guid in guids:
             job = Job.objects.get(job_id=guid)
-            job.status = "executed"
+            job.status = "failed"
             job.save()
+            job_logs = JobExecutionLogs.objects.get(job_id=job.id)
+            job_logs.status = "failed"
+            job_logs.save()
+
+            cache.set(f'stop_task_{guid}', True)
+            print(cache.get(f'stop_task_{guid}'))  # Should print True
         
         # Add the logic to stop the selected items
         jobs, completed_jobs = self.get_table_data()

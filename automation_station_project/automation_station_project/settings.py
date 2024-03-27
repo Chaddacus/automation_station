@@ -44,8 +44,8 @@ DB_HOST = config('DB_HOST')
 DB_PORT = config('DB_PORT', cast=int)
 
 
-ALLOWED_HOSTS = ['dev.auto.cloudwarriors.ai']
-CSRF_TRUSTED_ORIGINS = ['https://dev.auto.cloudwarriors.ai']
+ALLOWED_HOSTS = ['valid-patient-cat.ngrok-free.app']
+CSRF_TRUSTED_ORIGINS = ['https://valid-patient-cat.ngrok-free.app']
 
 ASGI_APPLICATION = "automation_station.routing.application"
 # Application definition
@@ -68,7 +68,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.pubsub.RedisPubSubChannelLayer',
         'CONFIG':{
-            "hosts": [('redis', 6379)],
+            "hosts": [('redis', 6379, 0)],
         },
     },
 }
@@ -118,6 +118,15 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://redis:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
 
 
 # Password validation
