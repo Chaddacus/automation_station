@@ -11,6 +11,7 @@ urlpatterns = [
     path('accounts/login/', auth_views.LoginView.as_view(), name='login'),
     path('callback', views.callback, name='callback'),
     path('zp_call_queue_create', views.zp_call_queue_create, name='zp_call_queue_create'),
+    path('zp_call_queue_members_create', views.zp_call_queue_members_create, name='zp_call_queue_members_create'),
     path('jobs', views.jobs, name='jobs'),
     path('settings', views.settings, name='settings'),
     path('download_data/<int:job_id>/', views.download_data, name='download_data'),

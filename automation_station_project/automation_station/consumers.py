@@ -1,12 +1,12 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import ZoomPhoneQueue, Job, JobCollection, JobExecutionLogs
+from .models import ZoomPhoneQueue, Job, JobCollection, JobExecutionLogs, ZoomPhoneQueueMembers
 from django.db.models import Count
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.apps import apps
 from django.template.loader import render_to_string
 from asgiref.sync import sync_to_async
-from automation_station_project.tasks import create_call_queue
+from automation_station_project.tasks import create_call_queue, add_call_queue_members
 from automation_station_project.helpers import init_zoom_client
 from django.forms.models import model_to_dict
 import json
@@ -21,6 +21,7 @@ class JobConsumer(AsyncWebsocketConsumer):
 
     FUNCTION_TO_MODEL_MAP = {
         'create_call_queue': 'ZoomPhoneQueue',
+        'add_call_queue_members': 'ZoomPhoneQueueMembers',
     }
     
 
@@ -92,6 +93,8 @@ class JobConsumer(AsyncWebsocketConsumer):
         guid = message['guid']
         output = message['output']
         job_result = message['job_result']
+
+        logging.critical(job_result)
         
         
         # Get the job
@@ -108,11 +111,13 @@ class JobConsumer(AsyncWebsocketConsumer):
         await self.update_log(job_log, output, job.status)
         logging.critical("Updated job_logs")   
             
-      
+        logging.critical(job_result.items())
 
         # Update the status of each jobcollection based on job_result
-        for jobcollection_id, success in job_result.items():
-            jobcollection = await database_sync_to_async(JobCollection.objects.get)(id=jobcollection_id)
+        for function_id, success in job_result.items():
+            logging.critical("Updating jobcollection statuses")   
+            jobcollection_obj = await database_sync_to_async(JobCollection.objects.get)(object_id=function_id, job_id=job.id)
+            jobcollection = await database_sync_to_async(JobCollection.objects.get)(id=jobcollection_obj.id)
             jobcollection.status = "executed" if success else "failed"
             await database_sync_to_async(jobcollection.save)()
         logging.critical("Updated jobcollection statuses")
@@ -120,18 +125,20 @@ class JobConsumer(AsyncWebsocketConsumer):
         data, function_name = await sync_to_async(self.get_job_collections)(job)
         logging.critical(data)
         
-        for job in data:
-            if job['status'] == 'scheduled':
+        for jobcol in data:
+            if jobcol['status'] == 'scheduled':
                 try:
-                    jobcollection = await database_sync_to_async(JobCollection.objects.get)(id=job['id'])
+                    logging.critical(jobcol['id'])
+                    logging.critical("Updating jobcollection status to failed for scheduled")
+                    jobcollection = await database_sync_to_async(JobCollection.objects.get)(id=jobcol['id'])
                     jobcollection.status = 'failed'
                     ModelClass = apps.get_model('automation_station', self.FUNCTION_TO_MODEL_MAP[function_name])
-                    related_object = await database_sync_to_async(ModelClass.objects.get)(id=job['related_object']['id'])
+                    related_object = await database_sync_to_async(ModelClass.objects.get)(id=jobcol['related_object']['id'])
                     collection_output = getattr(related_object, 'format_failed_collection')()
                     job_log.response_data.append(collection_output)
                     await database_sync_to_async(jobcollection.save)()
                 except ObjectDoesNotExist:
-                    logging.error(f"JobCollection with id {job['id']} does not exist")
+                    logging.error(f"JobCollection with id {jobcol['id']} does not exist")
 
         await database_sync_to_async(job_log.save)()
 
@@ -205,6 +212,8 @@ class JobConsumer(AsyncWebsocketConsumer):
         for guid in guids:
 
             job = Job.objects.get(job_id=guid)
+
+            logger.critical(job.id)
 
             job.status = "progress"
 
