@@ -99,8 +99,33 @@ class ZoomPhoneQueue(models.Model):
     
     def __str__(self):
         return "create_call_queue"
+    
+    def format_failed_collection(self):
+         return f"\n[{self.cost_center}] with extension [{self.extension_number}] failed: task cancelled"
         
+class ZoomPhoneQueueMembers(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_phone_queue_members'
+    )
+    name = models.CharField(max_length=100)
+    call_queue_id = models.CharField(max_length=100)
+    user_email = models.CharField(max_length=100, blank=True)
+    common_area_name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return "add_call_queue_members"
+    
+    def format_failed_collection(self):
+        if self.user_email:
+            return f"\n[{self.name}] failed to add [{self.user_email}] failed: task cancelled"
+        elif self.common_area_name:
+            return f"\n[{self.name}] failed to add [{self.common_area_name}] failed: task cancelled"
 
+        return f"\n[{self.name}] failed to add member: task cancelled"
+        
     
 class Job(models.Model):
     STATUS_CHOICES = (

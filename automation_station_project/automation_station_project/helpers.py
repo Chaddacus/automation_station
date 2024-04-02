@@ -71,11 +71,11 @@ def site_id(s_name , client):
             logging.debug("Site ID is: " + site['id'])
             return site['id']
 
-def call_queue_id(extension_id):
+def call_queue_id(extension_id, client):
     """
     Get the call queue id based on the call queue name.
     """
-    client = init_zoom_client()
+    #client = init_zoom_client()
     call_queues_response = client.phone.call_queues()
     call_queues = json.loads(call_queues_response.content)
     for queue in call_queues['call_queues']:
@@ -99,6 +99,34 @@ def cc_queue_id1(queue_name):
         if queue['queue_name'] == queue_name:
             logging.debug("CC queue id is : " + queue['queue_id'])
             return queue['queue_id']
+
+def common_area_extension_id(name, client):
+    #client = init_zoom_client()
+    ca_response = client.phone.common_area_extension_id(**{'page_size' : '100'})
+    ca_data = json.loads(ca_response.content)
+
+    while True:
+        for ca in ca_data['common_areas']:
+            logging.debug(ca)
+            logging.debug("ca name {}".format(ca['display_name']))
+            logging.debug("common area extension to match {}".format(name))
+            if ca['display_name'] == name:
+                logging.debug("common area extension id is : " + ca['id'])
+                return ca['id']
+
+        # Check if there's a next page
+        if 'next_page_token' in ca_data and ca_data['next_page_token']:
+            # If there's a next page, get the next page of common area extensions
+            logging.debug("Getting next page of common area extensions")
+            logging.debug("next page token {}".format(ca_data['next_page_token']))
+            ca_response = client.phone.common_area_extension_id(**{'page_size' : '100', 'next_page_token': ca_data['next_page_token']})
+            ca_data = json.loads(ca_response.content)
+        else:
+            # If there's no next page, break the loop
+            logging.debug("No next page of common area extensions")
+            break
+
+    return None
 
 def business_hours_id(bh_name):
     """
