@@ -16,7 +16,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib import messages
 
 from django.contrib.contenttypes.models import ContentType
-from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers
+from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers, ZoomPhoneAddSites
 from automation_station_project.tasks import add
 
 from time import sleep
@@ -152,6 +152,61 @@ def zp_call_queue_members_create(request):
 
         if job_created:
             messages.success(request, "The Phone call queue Members Create Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+
+def zp_add_sites(request):
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="add sites",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomPhoneAddSites.objects.create(
+                user=request.user,
+                name=row['name'],
+                auto_receptionist_name=row['auto_receptionist_name'],
+                country = row['country'],
+                address_line1= row['address_line1'],
+                city= row['city'],
+                zip= row['zip'],
+                state_code= row['state_code'],
+                address_line2= row['address_line2'],
+                short_extension_length=row['short_extension_length'],
+                site_code=row['site_code'],
+            )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomPhoneAddSites)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The Add Sites Job and associated collections have been successfully added")
         else:
             messages.warning(request, "No records found in the CSV file")
 
