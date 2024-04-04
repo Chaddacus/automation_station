@@ -7,7 +7,7 @@ import time
 import json
 
 
-from .helpers import process_csv, init_zoom_client, site_id, call_queue_id, common_area_extension_id, site_json
+from .helpers import process_csv, init_zoom_client, site_id, call_queue_id, common_area_extension_id, site_json, auto_receptionist_id
 from automation_station.models import Job, JobExecutionLogs
 import logging
 
@@ -280,8 +280,7 @@ def add_auto_receptionist(guid, data, zoomclientId, zoomclientSecret, zoomaccoun
             if cache.get(f'stop_task_{guid}'):
                 output.append("Task Stopped")
                 break
-            # Add logic to if/else where jobcollection status = executed if 201 & failed if stop_task or 400
-            # Can't access jobs directly here ... should this get built into a map of IDs to status to pass back with results?
+
 
             jobcollection = row.pop(0)
             logger.critical(client)
@@ -314,6 +313,94 @@ def add_auto_receptionist(guid, data, zoomclientId, zoomclientSecret, zoomaccoun
                 logger.critical(client_request.json())
                 output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 output.append("Auto Receptionist Not Created "+row[0])
+                output.append(client_request.json())
+                failed +=1
+                action_success = False
+            
+            job_result[str(jobcollection)] = action_success
+            
+            channel_layer = get_channel_layer()
+            
+            logging.critical(channel_layer)
+
+           # time.sleep(2)
+            
+        results = {
+            "guid": guid,
+            "job_result" : job_result,
+            "success": success,
+            "failed": failed,
+            "output": output,
+        }
+            
+        async_to_sync(channel_layer.group_send)(
+                'job_group',
+                {
+                    'type': 'job.message',
+                    'message': results
+                }
+            )
+        logger.critical("message sent")
+
+
+@shared_task
+def update_auto_receptionist(guid, data, zoomclientId, zoomclientSecret, zoomaccountId):
+
+        """
+        Create call queues in Zoom Phone using a CSV file
+        """
+        
+        output = []
+        results = {}
+        success = 0
+        failed = 0
+        job_result = {}
+        
+        action_success = False
+        #reader = process_csv(request, zoomclientId, zoomclientSecret, zoomaccountId, output, action_success)
+
+        client = init_zoom_client(zoomclientId, zoomclientSecret, zoomaccountId)
+        for row in data:
+
+            if cache.get(f'stop_task_{guid}'):
+                output.append("Task Stopped")
+                break
+
+            jobcollection = row.pop(0)
+            logger.critical(client)
+
+            arId = auto_receptionist_id(row[0], client)
+            
+            params = {
+                'cost_center': row[1],
+                'department': row[2],
+                'extension_number': row[3],
+                'name': row[4],
+                'audio_prompt_language': row[5],
+                'timezone': row[6]
+            }
+
+            client_request = client.phone.patch_request(f"/phone/auto_receptionists/{arId}", data=params)
+            
+            logger.critical("Processing Auto Receptionist Update "+row[0])      
+
+            #output.append(client_request.json())
+
+            logger.critical("status code "+ str(client_request.status_code))
+            if client_request.status_code == 201:
+                logger.critical("Auto Receptionist Updated Successfully")
+                output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                output.append("Auto Receptionist Updated "+row[0])
+                output.append(client_request.json())
+                success +=1
+                action_success = True
+            
+            else:
+
+                logger.critical("Auto Receptionist Update Failed")
+                logger.critical(client_request.json())
+                output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                output.append("Auto Receptionist Not Updated "+row[0])
                 output.append(client_request.json())
                 failed +=1
                 action_success = False

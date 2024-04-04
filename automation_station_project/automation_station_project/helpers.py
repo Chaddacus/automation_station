@@ -318,3 +318,25 @@ def check_utf8(file):
     result = chardet.detect(raw_data)
     file_encoding = result['encoding']
     return file_encoding.lower() in ('utf-8', 'ascii')
+
+def auto_receptionist_id(ar_name, client):
+    ar_response = client.phone.get_request("/phone/auto_receptionists")
+    ar_data = json.loads(ar_response.content)
+
+    while True:
+        for ar in ar_data['auto_receptionists']:
+            logging.debug(ar)
+            if ar['name'] == ar_name:
+                logging.debug("auto receptionist id is : " + ar['id'])
+                return ar['id']
+
+        # Check if there's a next page
+        if 'next_page_token' in ar_data and ar_data['next_page_token']:
+            # If there's a next page, get the next page of auto receptionists
+            ar_response = client.phone.get_request("/phone/auto_receptionists", params={'next_page_token': ar_data['next_page_token']})
+            ar_data = json.loads(ar_response.content)
+        else:
+            # If there's no next page, break the loop
+            break
+
+    return None

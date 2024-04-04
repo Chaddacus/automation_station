@@ -173,6 +173,19 @@
                     </form>
                 </div>
             </div>
+            <div class="justify-center rounded mx-auto">
+                <div class="bg-gray-700 rounded-md border border-solid border-gray-700  p-4 mx-auto">
+                    <h1 class="text-3xl text-white font-bold mx-4 my-4">Update Auto Receptionist</h1>
+                    <form method="POST" action="{% url 'zp_update_auto_receptionist' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
+                        <div class="mb-6">
+                            <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
+                        </div>
+                        <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
+                        <a href="{% static 'sample_csvs/zp_update_ar_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                    </form>
+                </div>
+            </div>
         </div>
         
         <!-- Begin ZCC automation options -->

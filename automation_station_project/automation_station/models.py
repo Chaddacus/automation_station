@@ -166,7 +166,29 @@ class ZoomPhoneAddAutoReceptionist(models.Model):
     def format_failed_collection(self):
         return f"[{self.name}] failed to add auto receptionist: task cancelled"
         
+
+class ZoomPhoneUpdateAutoReceptionist(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_phone_update_ar'
+    )
+    name = models.CharField(max_length=100)
+    cost_center = models.CharField(max_length=100)
+    department = models.CharField(max_length=100)
+    extension_number = models.IntegerField()
+    name_change = models.CharField(max_length=100)
+    audio_prompt_language = models.CharField(max_length=100)
+    timezone = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "update_auto_receptionist"
     
+    def format_failed_collection(self):
+        return f"[{self.name}] failed to update auto receptionist: task cancelled"
+
+
 class Job(models.Model):
     STATUS_CHOICES = (
         ('scheduled', 'Scheduled'),

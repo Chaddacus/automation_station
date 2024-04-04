@@ -1,12 +1,12 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import ZoomPhoneQueue, Job, JobCollection, JobExecutionLogs, ZoomPhoneQueueMembers, ZoomPhoneAddSites, ZoomPhoneAddAutoReceptionist
+from .models import ZoomPhoneQueue, Job, JobCollection, JobExecutionLogs, ZoomPhoneQueueMembers, ZoomPhoneAddSites, ZoomPhoneAddAutoReceptionist, ZoomPhoneUpdateAutoReceptionist
 from django.db.models import Count
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.apps import apps
 from django.template.loader import render_to_string
 from asgiref.sync import sync_to_async
-from automation_station_project.tasks import create_call_queue, add_call_queue_members, add_sites, add_auto_receptionist
+from automation_station_project.tasks import create_call_queue, add_call_queue_members, add_sites, add_auto_receptionist, update_auto_receptionist
 from automation_station_project.helpers import init_zoom_client
 from django.forms.models import model_to_dict
 import json
@@ -23,7 +23,8 @@ class JobConsumer(AsyncWebsocketConsumer):
         'create_call_queue': 'ZoomPhoneQueue',
         'add_call_queue_members': 'ZoomPhoneQueueMembers',
         'add_sites': 'ZoomPhoneAddSites',
-        'add_auto_receptionist': 'ZoomPhoneAddAutoReceptionist'
+        'add_auto_receptionist': 'ZoomPhoneAddAutoReceptionist', 
+        'update_auto_receptionist': 'ZoomPhoneUpdateAutoReceptionist'
     }
     
 
