@@ -101,7 +101,7 @@ class ZoomPhoneQueue(models.Model):
         return "create_call_queue"
     
     def format_failed_collection(self):
-         return f"\n[{self.cost_center}] with extension [{self.extension_number}] failed: task cancelled"
+         return f"[{self.cost_center}] with extension [{self.extension_number}] failed: task cancelled"
         
 class ZoomPhoneQueueMembers(models.Model):
     user = models.ForeignKey(
@@ -120,11 +120,51 @@ class ZoomPhoneQueueMembers(models.Model):
     
     def format_failed_collection(self):
         if self.user_email:
-            return f"\n[{self.name}] failed to add [{self.user_email}] failed: task cancelled"
+            return f"[{self.name}] failed to add [{self.user_email}] failed: task cancelled"
         elif self.common_area_name:
-            return f"\n[{self.name}] failed to add [{self.common_area_name}] failed: task cancelled"
+            return f"[{self.name}] failed to add [{self.common_area_name}] failed: task cancelled"
 
-        return f"\n[{self.name}] failed to add member: task cancelled"
+        return f"[{self.name}] failed to add member: task cancelled"
+
+class ZoomPhoneAddSites(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_phone_add_sites'
+    )
+    name = models.CharField(max_length=100)
+    auto_receptionist_name = models.CharField(max_length=100)
+    country = models.CharField(max_length=100, default='Default Country')
+    address_line1 = models.CharField(max_length=100, default='Default Address')
+    city = models.CharField(max_length=100, default='Default City')
+    zip = models.CharField(max_length=100, default='00000')
+    state_code = models.CharField(max_length=100, default='Default State')
+    address_line2 = models.CharField(max_length=100, blank=True, null=True, default='Default Address Line 2')
+    short_extension_length = models.CharField(max_length=100)
+    site_code = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return "add_sites"
+    
+    def format_failed_collection(self):
+        return f"[{self.name}] failed to add site: task cancelled"
+
+class ZoomPhoneAddAutoReceptionist(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_phone_add_ar'
+    )
+    name = models.CharField(max_length=100)
+    site_id = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "add_auto_receptionist"
+    
+    def format_failed_collection(self):
+        return f"[{self.name}] failed to add auto receptionist: task cancelled"
         
     
 class Job(models.Model):

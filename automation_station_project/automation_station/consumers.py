@@ -1,12 +1,12 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import ZoomPhoneQueue, Job, JobCollection, JobExecutionLogs, ZoomPhoneQueueMembers
+from .models import ZoomPhoneQueue, Job, JobCollection, JobExecutionLogs, ZoomPhoneQueueMembers, ZoomPhoneAddSites, ZoomPhoneAddAutoReceptionist
 from django.db.models import Count
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.apps import apps
 from django.template.loader import render_to_string
 from asgiref.sync import sync_to_async
-from automation_station_project.tasks import create_call_queue, add_call_queue_members
+from automation_station_project.tasks import create_call_queue, add_call_queue_members, add_sites, add_auto_receptionist
 from automation_station_project.helpers import init_zoom_client
 from django.forms.models import model_to_dict
 import json
@@ -22,6 +22,8 @@ class JobConsumer(AsyncWebsocketConsumer):
     FUNCTION_TO_MODEL_MAP = {
         'create_call_queue': 'ZoomPhoneQueue',
         'add_call_queue_members': 'ZoomPhoneQueueMembers',
+        'add_sites': 'ZoomPhoneAddSites',
+        'add_auto_receptionist': 'ZoomPhoneAddAutoReceptionist'
     }
     
 
@@ -130,13 +132,21 @@ class JobConsumer(AsyncWebsocketConsumer):
                 try:
                     logging.critical(jobcol['id'])
                     logging.critical("Updating jobcollection status to failed for scheduled")
+
                     jobcollection = await database_sync_to_async(JobCollection.objects.get)(id=jobcol['id'])
                     jobcollection.status = 'failed'
+
                     ModelClass = apps.get_model('automation_station', self.FUNCTION_TO_MODEL_MAP[function_name])
                     related_object = await database_sync_to_async(ModelClass.objects.get)(id=jobcol['related_object']['id'])
                     collection_output = getattr(related_object, 'format_failed_collection')()
-                    job_log.response_data.append(collection_output)
+
+                    execution_time = job_log.execution_time.strftime('%Y-%m-%d %H:%M:%S')
+
+                    # Prepend the execution_time to the response_data
+                    job_log.response_data.append(f"\n{execution_time} {collection_output}")
+
                     await database_sync_to_async(jobcollection.save)()
+                    
                 except ObjectDoesNotExist:
                     logging.error(f"JobCollection with id {jobcol['id']} does not exist")
 
