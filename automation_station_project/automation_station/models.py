@@ -149,6 +149,22 @@ class ZoomPhoneAddSites(models.Model):
     
     def format_failed_collection(self):
         return f"[{self.name}] failed to add site: task cancelled"
+
+class ZoomPhoneAddAutoReceptionist(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_phone_add_ar'
+    )
+    name = models.CharField(max_length=100)
+    site_id = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "add_auto_receptionist"
+    
+    def format_failed_collection(self):
+        return f"[{self.name}] failed to add auto receptionist: task cancelled"
         
     
 class Job(models.Model):

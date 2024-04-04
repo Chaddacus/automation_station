@@ -256,3 +256,89 @@ def add_sites(guid, data, zoomclientId, zoomclientSecret, zoomaccountId):
             'message': results
         }
     )       
+
+
+@shared_task
+def add_auto_receptionist(guid, data, zoomclientId, zoomclientSecret, zoomaccountId):
+
+        """
+        Create call queues in Zoom Phone using a CSV file
+        """
+        
+        output = []
+        results = {}
+        success = 0
+        failed = 0
+        job_result = {}
+        
+        action_success = False
+        #reader = process_csv(request, zoomclientId, zoomclientSecret, zoomaccountId, output, action_success)
+
+        client = init_zoom_client(zoomclientId, zoomclientSecret, zoomaccountId)
+        for row in data:
+
+            if cache.get(f'stop_task_{guid}'):
+                output.append("Task Stopped")
+                break
+            # Add logic to if/else where jobcollection status = executed if 201 & failed if stop_task or 400
+            # Can't access jobs directly here ... should this get built into a map of IDs to status to pass back with results?
+
+            jobcollection = row.pop(0)
+            logger.critical(client)
+
+            site_id_value = site_id(row[1], client)
+            
+            params = {
+                "name": row[0],
+                "site_id": site_id_value
+            }
+
+            client_request = client.phone.post_request("/phone/auto_receptionists", data=params)
+            
+            logger.critical("Processing Auto Receptionist "+row[0])      
+
+            #output.append(client_request.json())
+
+            logger.critical("status code "+ str(client_request.status_code))
+            if client_request.status_code == 201:
+                logger.critical("Auto Receptionist Added Successfully")
+                output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                output.append("Auto Receptionist Added "+row[0])
+                output.append(client_request.json())
+                success +=1
+                action_success = True
+            
+            else:
+
+                logger.critical("Auto Receptionist Creation Failed")
+                logger.critical(client_request.json())
+                output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                output.append("Auto Receptionist Not Created "+row[0])
+                output.append(client_request.json())
+                failed +=1
+                action_success = False
+            
+            job_result[str(jobcollection)] = action_success
+            
+            channel_layer = get_channel_layer()
+            
+            logging.critical(channel_layer)
+
+           # time.sleep(2)
+            
+        results = {
+            "guid": guid,
+            "job_result" : job_result,
+            "success": success,
+            "failed": failed,
+            "output": output,
+        }
+            
+        async_to_sync(channel_layer.group_send)(
+                'job_group',
+                {
+                    'type': 'job.message',
+                    'message': results
+                }
+            )
+        logger.critical("message sent")
