@@ -189,6 +189,27 @@ class ZoomPhoneUpdateAutoReceptionist(models.Model):
         return f"[{self.name}] failed to update auto receptionist: task cancelled"
 
 
+class ZoomPhoneAddCommonAreas(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_phone_add_common_areas'
+    )
+    calling_plan_code = models.IntegerField()
+    country_iso_code = models.CharField(max_length=100)
+    display_name = models.CharField(max_length=100)
+    extension_number = models.IntegerField()
+    site_name = models.CharField(max_length=100)
+    timezone = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "add_common_areas"
+    
+    def format_failed_collection(self):
+        return f"[{self.display_name}] failed to add common area: task cancelled"
+
+
 class Job(models.Model):
     STATUS_CHOICES = (
         ('scheduled', 'Scheduled'),
