@@ -209,6 +209,24 @@ class ZoomPhoneAddCommonAreas(models.Model):
     def format_failed_collection(self):
         return f"[{self.display_name}] failed to add common area: task cancelled"
 
+class ZoomCCQueue(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_cc_create_call_queue'
+    )
+
+    queue_name = models.CharField(max_length=100)
+    queue_description = models.CharField(max_length=200)
+    queue_type = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "cc_create_call_queue"
+    
+    def format_failed_collection(self):
+        return f"[{self.queue_name}] failed to create cc call queue: task cancelled"
+
 
 class Job(models.Model):
     STATUS_CHOICES = (
