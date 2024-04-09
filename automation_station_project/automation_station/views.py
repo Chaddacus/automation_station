@@ -16,7 +16,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib import messages
 
 from django.contrib.contenttypes.models import ContentType
-from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers, ZoomPhoneAddSites 
+from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers, ZoomPhoneAddSites, ZoomCCDisposition
 from .models import ZoomPhoneAddAutoReceptionist, ZoomPhoneUpdateAutoReceptionist, ZoomPhoneAddCommonAreas, ZoomCCQueue, ZoomCCUpdateQueue
 from automation_station_project.tasks import add
 
@@ -484,6 +484,56 @@ def zcc_call_queue_update(request):
 
         return render(request, 'index.html')  # Redirect to a success page or another relevant view
 
+def zcc_create_disposition(request): 
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="create cc disposition",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomCCDisposition.objects.create(
+                user=request.user,
+                status = row.get('status', ''),
+                disposition_name = row.get('disposition_name', ''),
+                disposition_description = row.get('disposition_description', ''),
+                disposition_type = row.get('disposition_type', ''),
+                sub_disposition_name = row.get('sub_disposition_name', ''),
+                current_index = row.get('current_index', ''),
+                parent_index = row.get('parent_index', ''),
+            )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomCCDisposition)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.disposition_name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The CC Create Disposition Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
 
 @login_required
 def index(request):

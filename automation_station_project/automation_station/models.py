@@ -275,6 +275,27 @@ class ZoomCCUpdateQueue(models.Model):
     def format_failed_collection(self):
         return f"[{self.queue_name}] failed to update cc call queue: task cancelled"
 
+class ZoomCCDisposition(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_cc_create_disposition'
+    )
+    status = models.CharField(max_length=100)
+    disposition_name = models.CharField(max_length=100)
+    disposition_description = models.CharField(max_length=200)
+    disposition_type = models.CharField(max_length=100)
+    sub_disposition_name = models.CharField(max_length=100)
+    current_index = models.CharField(max_length=100)
+    parent_index = models.CharField(max_length=100)
+
+
+    def __str__(self):
+        return "cc_create_disposition"
+    
+    def format_failed_collection(self):
+        return f"[{self.disposition_name}] failed to create disposition: task cancelled"
+
 
 class Job(models.Model):
     STATUS_CHOICES = (
