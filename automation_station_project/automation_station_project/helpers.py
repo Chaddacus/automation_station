@@ -170,11 +170,11 @@ def disposition_id(d_name):
             logging.debug("disposition id is : " + d['disposition_id'])
             return d['disposition_id']
 
-def get_role_id(role_name):
+def get_role_id(role_name, client):
     """
     Get the role id based on the client.
     """
-    client = init_zoom_client()
+    #client = init_zoom_client()
     role_response = client.contact_center.get_request("/contact_center/roles") 
     #logger.info(role_response.content)
     role_data = json.loads(role_response.content)

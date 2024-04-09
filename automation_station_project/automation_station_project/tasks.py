@@ -7,7 +7,7 @@ import time
 import json
 
 
-from .helpers import process_csv, init_zoom_client, site_id, call_queue_id, common_area_extension_id, site_json, auto_receptionist_id, cc_queue_id
+from .helpers import process_csv, init_zoom_client, site_id, call_queue_id, common_area_extension_id, site_json, auto_receptionist_id, cc_queue_id, get_role_id
 from automation_station.models import Job, JobExecutionLogs
 import logging
 
@@ -601,7 +601,7 @@ def cc_create_call_queue(guid, data, zoomclientId, zoomclientSecret, zoomaccount
 def cc_update_call_queue(guid, data, zoomclientId, zoomclientSecret, zoomaccountId):
 
         """
-        Create call queues in Zoom CC using a CSV file
+        Update call queues in Zoom CC using a CSV file
         """
         
         output = []
@@ -696,7 +696,7 @@ def cc_update_call_queue(guid, data, zoomclientId, zoomclientSecret, zoomaccount
 def cc_create_disposition(guid, data, zoomclientId, zoomclientSecret, zoomaccountId):
 
         """
-        Create call queues in Zoom CC using a CSV file
+        Create disposition in Zoom CC using a CSV file
         """
         
         output = []
@@ -742,6 +742,89 @@ def cc_create_disposition(guid, data, zoomclientId, zoomclientSecret, zoomaccoun
                 logger.critical(client_request.json())
                 output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 output.append("CC Disposition Not Created "+row[1])
+                output.append(client_request.json())
+                failed +=1
+                action_success = False
+            
+            job_result[str(jobcollection)] = action_success
+            
+            channel_layer = get_channel_layer()
+            
+            logging.critical(channel_layer)
+
+           # time.sleep(2)
+            
+        results = {
+            "guid": guid,
+            "job_result" : job_result,
+            "success": success,
+            "failed": failed,
+            "output": output,
+        }
+            
+        async_to_sync(channel_layer.group_send)(
+                'job_group',
+                {
+                    'type': 'job.message',
+                    'message': results
+                }
+            )
+        logger.critical("message sent")
+
+@shared_task
+def cc_add_users(guid, data, zoomclientId, zoomclientSecret, zoomaccountId):
+
+        """
+        Add users in Zoom CC using a CSV file
+        """
+        
+        output = []
+        results = {}
+        success = 0
+        failed = 0
+        job_result = {}
+        
+        action_success = False
+        #reader = process_csv(request, zoomclientId, zoomclientSecret, zoomaccountId, output, action_success)
+
+        client = init_zoom_client(zoomclientId, zoomclientSecret, zoomaccountId)
+        for row in data:
+
+            if cache.get(f'stop_task_{guid}'):
+                output.append("Task Stopped")
+                break
+           
+            jobcollection = row.pop(0)
+            logger.critical(client)
+
+            id = get_role_id(row[2], client)
+
+            keys = ['user_id','user_email','role_name','country_iso_code','client_integration','user_access','region_id','channel_settings','multi_channel_engagements','enable','max_agent_load','concurrent_message_capacity']
+
+            params = {k: v for k, v in zip(keys, row) if v}
+            params['role_id'] = id
+
+            client_request = client.contact_center.post_request("/contact_center/users/", data=params)  
+            
+            #logger.critical("Adding CC User "+row[1])      
+
+            #output.append(client_request.json())
+
+            logger.critical("status code "+ str(client_request.status_code))
+            if client_request is not None and client_request.status_code in [200, 201]:
+                logger.critical("CC User Added Successfully")
+                output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                output.append("CC User Added "+row[1])
+                output.append(client_request.json())
+                success +=1
+                action_success = True
+            
+            else:
+
+                logger.critical("CC User Add Failed")
+                logger.critical(client_request.json())
+                output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                output.append("CC User Add Failed "+row[1])
                 output.append(client_request.json())
                 failed +=1
                 action_success = False

@@ -17,7 +17,7 @@ from django.contrib import messages
 
 from django.contrib.contenttypes.models import ContentType
 from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers, ZoomPhoneAddSites, ZoomCCDisposition
-from .models import ZoomPhoneAddAutoReceptionist, ZoomPhoneUpdateAutoReceptionist, ZoomPhoneAddCommonAreas, ZoomCCQueue, ZoomCCUpdateQueue
+from .models import ZoomPhoneAddAutoReceptionist, ZoomPhoneUpdateAutoReceptionist, ZoomPhoneAddCommonAreas, ZoomCCQueue, ZoomCCUpdateQueue, ZoomCCAddUsers
 from automation_station_project.tasks import add
 
 from time import sleep
@@ -534,6 +534,64 @@ def zcc_create_disposition(request):
             messages.warning(request, "No records found in the CSV file")
 
         return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+
+def zcc_add_users(request): 
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="add cc users",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomCCAddUsers.objects.create(
+                user=request.user,
+                new_user_id = row.get('user_id', ''),
+                user_email = row.get('user_email', ''),
+                role_name = row.get('role_name', ''),
+                country_iso_code = row.get('country_iso_code', ''),
+                client_integration = row.get('client_integration', ''),
+                user_access = row.get('user_access', ''),
+                region_id = row.get('region_id', ''),
+                channel_settings = row.get('channel_settings', ''),
+                multi_channel_engagements = row.get('multi_channel_engagements', ''),
+                enable = row.get('enable', ''),
+                max_agent_load = row.get('max_agent_load', ''),
+                concurrent_message_capacity = row.get('concurrent_message_capacity', ''),
+            )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomCCAddUsers)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.new_user_id}" if site.new_user_id else f"Job for {site.user_email}",
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The CC Add users Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
 
 @login_required
 def index(request):

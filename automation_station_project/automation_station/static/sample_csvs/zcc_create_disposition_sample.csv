@@ -1,2 +1,2 @@
-status (inactive|active),disposition_name,disposition_description,disposition_type (single|multi_level),sub_disposition_name,current_index,parent_index
-inactive,Disposition2,This is the first disposition,single,,,0
+status,disposition_name,disposition_description,disposition_type,sub_disposition_name,current_index,parent_index
+inactive,Disposition5,This is the first disposition,single,,,0

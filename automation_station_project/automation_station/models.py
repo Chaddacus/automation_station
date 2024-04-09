@@ -297,6 +297,38 @@ class ZoomCCDisposition(models.Model):
         return f"[{self.disposition_name}] failed to create disposition: task cancelled"
 
 
+class ZoomCCAddUsers(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_cc_add_users'
+    )
+    new_user_id = models.CharField(max_length=100)
+    user_email = models.CharField(max_length=100)
+    role_name = models.CharField(max_length=100)
+    country_iso_code = models.CharField(max_length=100)
+    client_integration = models.CharField(max_length=100)
+    user_access = models.CharField(max_length=100)
+    region_id = models.CharField(max_length=100)
+    channel_settings = models.CharField(max_length=100)
+    multi_channel_engagements = models.CharField(max_length=100, default='false')
+    enable = models.CharField(max_length=100, default='false')
+    max_agent_load = models.CharField(max_length=100, default='0')
+    concurrent_message_capacity = models.CharField(max_length=100)
+
+
+    def __str__(self):
+        return "cc_add_users"
+    
+    def format_failed_collection(self):
+        if self.user_email:
+            return f"[{self.user_email}] failed to add user: task cancelled"
+        elif self.user_id: 
+            return f"[{self.user_id}] failed to add user: task cancelled"
+        else: 
+            return f"Failed to add user: task cancelled"
+
+
 class Job(models.Model):
     STATUS_CHOICES = (
         ('scheduled', 'Scheduled'),
