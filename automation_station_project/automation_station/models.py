@@ -227,6 +227,54 @@ class ZoomCCQueue(models.Model):
     def format_failed_collection(self):
         return f"[{self.queue_name}] failed to create cc call queue: task cancelled"
 
+class ZoomCCUpdateQueue(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_cc_update_call_queue'
+    )
+
+    queue_name = models.CharField(max_length=100)
+    queue_description = models.CharField(max_length=200)
+    max_wait_time = models.CharField(max_length=100)
+    wrap_up_time = models.CharField(max_length=100)
+    max_engagement_in_queue = models.CharField(max_length=100)
+    short_abandon_enable = models.CharField(max_length=100)
+    short_abandon_threshold = models.CharField(max_length=100)
+    channel_types = models.CharField(max_length=100)
+    distribution_type = models.CharField(max_length=100)
+    distribution_duration_in_seconds = models.CharField(max_length=100)
+    connecting_media_id = models.CharField(max_length=100)
+    transferring_media_id = models.CharField(max_length=100)
+    holding_media_id = models.CharField(max_length=100)
+    waiting_room_id = models.CharField(max_length=100)
+    message_accept = models.CharField(max_length=100)
+    wrap_up_expiration = models.CharField(max_length=100)
+    overflow_to_goodbye_message = models.CharField(max_length=200)
+    overflow_to_queue_id = models.CharField(max_length=100)
+    overflow_to_flow_id = models.CharField(max_length=100)
+    overflow_to_inbox_id = models.CharField(max_length=100)
+    auto_close_message = models.CharField(max_length=200)
+    auto_close_message_enabled = models.CharField(max_length=100)
+    auto_close_timeout = models.CharField(max_length=100)
+    auto_close_alert_message = models.CharField(max_length=200)
+    auto_close_alert_message_enabled = models.CharField(max_length=100)
+    auto_close_alert_message_time = models.CharField(max_length=100)
+    recording_storage_location = models.CharField(max_length=100)
+    service_level_threshold_in_seconds = models.CharField(max_length=100)
+    service_level_exclude_short_abandoned_calls = models.CharField(max_length=100)
+    service_level_exclude_long_abandoned_calls = models.CharField(max_length=100)
+    service_level_exclude_abandoned_quit_engagements = models.CharField(max_length=100)
+    service_level_target_in_percentage = models.CharField(max_length=100)
+    agent_routing_profile_id = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "cc_update_call_queue"
+    
+    def format_failed_collection(self):
+        return f"[{self.queue_name}] failed to update cc call queue: task cancelled"
+
 
 class Job(models.Model):
     STATUS_CHOICES = (

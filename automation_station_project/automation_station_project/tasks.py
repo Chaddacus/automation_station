@@ -7,7 +7,7 @@ import time
 import json
 
 
-from .helpers import process_csv, init_zoom_client, site_id, call_queue_id, common_area_extension_id, site_json, auto_receptionist_id
+from .helpers import process_csv, init_zoom_client, site_id, call_queue_id, common_area_extension_id, site_json, auto_receptionist_id, cc_queue_id
 from automation_station.models import Job, JobExecutionLogs
 import logging
 
@@ -568,6 +568,101 @@ def cc_create_call_queue(guid, data, zoomclientId, zoomclientSecret, zoomaccount
                 logger.critical(client_request.json())
                 output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 output.append("CC Call Queue Not Created "+row[0])
+                output.append(client_request.json())
+                failed +=1
+                action_success = False
+            
+            job_result[str(jobcollection)] = action_success
+            
+            channel_layer = get_channel_layer()
+            
+            logging.critical(channel_layer)
+
+           # time.sleep(2)
+            
+        results = {
+            "guid": guid,
+            "job_result" : job_result,
+            "success": success,
+            "failed": failed,
+            "output": output,
+        }
+            
+        async_to_sync(channel_layer.group_send)(
+                'job_group',
+                {
+                    'type': 'job.message',
+                    'message': results
+                }
+            )
+        logger.critical("message sent")
+
+@shared_task
+def cc_update_call_queue(guid, data, zoomclientId, zoomclientSecret, zoomaccountId):
+
+        """
+        Create call queues in Zoom CC using a CSV file
+        """
+        
+        output = []
+        results = {}
+        success = 0
+        failed = 0
+        job_result = {}
+        
+        action_success = False
+        #reader = process_csv(request, zoomclientId, zoomclientSecret, zoomaccountId, output, action_success)
+
+        client = init_zoom_client(zoomclientId, zoomclientSecret, zoomaccountId)
+        for row in data:
+
+            if cache.get(f'stop_task_{guid}'):
+                output.append("Task Stopped")
+                break
+           
+            jobcollection = row.pop(0)
+            logger.critical(client)
+          
+            name = row[0]
+
+            id = cc_queue_id(name, client)
+
+            keys = [
+                'queue_name', 'queue_description', 'max_wait_time', 'wrap_up_time', 'max_engagement_in_queue',
+                'short_abandon_enable', 'short_abandon_threshold', 'channel_types', 'distribution_type',
+                'distribution_duration_in_seconds', 'connecting_media_id', 'transferring_media_id',
+                'holding_media_id', 'waiting_room_id', 'message_accept', 'wrap_up_expiration',
+                'overflow_to_goodbye_message', 'overflow_to_queue_id', 'overflow_to_flow_id',
+                'overflow_to_inbox_id', 'auto_close_message', 'auto_close_message_enabled',
+                'auto_close_timeout', 'auto_close_alert_message', 'auto_close_alert_message_enabled',
+                'auto_close_alert_message_time', 'recording_storage_location',
+                'service_level_threshold_in_seconds', 'service_level_exclude_short_abandoned_calls',
+                'service_level_exclude_long_abandoned_calls', 'service_level_exclude_abandoned_quit_engagements',
+                'service_level_target_in_percentage', 'agent_routing_profile_id'
+            ]
+
+            params = {k: v for k, v in zip(keys, row) if v}
+            params['queue_id'] = id
+
+            client_request = client.contact_center.queues_update(**params)
+            
+            logger.critical("Updating CC Call Queue "+row[0])      
+
+            #output.append(client_request.json())
+
+            logger.critical("status code "+ str(client_request.status_code))
+            if client_request.status_code in [200,201,204]:
+                logger.critical("CC Call Queue Updated Successfully")
+                output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                output.append("CC Call Queue Updated "+row[0] + '\n')
+                success +=1
+                action_success = True
+            
+            else:
+                logger.critical("CC Call Queue Updated Failed")
+                logger.critical(client_request.json())
+                output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                output.append("CC Call Queue Not Updated "+row[0]  + '\n')
                 output.append(client_request.json())
                 failed +=1
                 action_success = False

@@ -276,8 +276,7 @@ def inbox_id(inbox_name):
             return inbox['inbox_id']
     return None
 
-def cc_queue_id(queue_name):
-    client = init_zoom_client()
+def cc_queue_id(queue_name, client):
     params = {'page_size': 300}
     call_queues_response = client.contact_center.queues_list(**params)
 

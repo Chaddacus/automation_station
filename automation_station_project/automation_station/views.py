@@ -17,7 +17,7 @@ from django.contrib import messages
 
 from django.contrib.contenttypes.models import ContentType
 from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers, ZoomPhoneAddSites 
-from .models import ZoomPhoneAddAutoReceptionist, ZoomPhoneUpdateAutoReceptionist, ZoomPhoneAddCommonAreas, ZoomCCQueue
+from .models import ZoomPhoneAddAutoReceptionist, ZoomPhoneUpdateAutoReceptionist, ZoomPhoneAddCommonAreas, ZoomCCQueue, ZoomCCUpdateQueue
 from automation_station_project.tasks import add
 
 from time import sleep
@@ -402,6 +402,83 @@ def zcc_call_queue_create(request):
 
         if job_created:
             messages.success(request, "The CC Create Queue Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+    
+def zcc_call_queue_update(request): 
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="update cc call queue",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomCCUpdateQueue.objects.create(
+                user=request.user,
+                queue_name=row['queue_name'],
+                queue_description=row.get('queue_description', ''), 
+                max_wait_time=row.get('max_wait_time', ''),
+                wrap_up_time=row.get('wrap_up_time', ''),
+                max_engagement_in_queue=row.get('max_engagement_in_queue', ''),
+                short_abandon_enable=row.get('short_abandon_enable', ''),
+                short_abandon_threshold=row.get('short_abandon_threshold', ''),
+                channel_types=row.get('channel_types', ''),
+                distribution_type=row.get('distribution_type', ''),
+                distribution_duration_in_seconds=row.get('distribution_duration_in_seconds', ''),
+                connecting_media_id=row.get('connecting_media_id', ''),
+                transferring_media_id=row.get('transferring_media_id', ''),
+                holding_media_id=row.get('holding_media_id', ''),
+                waiting_room_id=row.get('waiting_room_id', ''),
+                message_accept=row.get('message_accept', ''),
+                wrap_up_expiration=row.get('wrap_up_expiration', ''),
+                overflow_to_goodbye_message=row.get('overflow_to_goodbye_message', ''),
+                overflow_to_queue_id=row.get('overflow_to_queue_id', ''),
+                overflow_to_flow_id=row.get('overflow_to_flow_id', ''),
+                overflow_to_inbox_id=row.get('overflow_to_inbox_id', ''),
+                auto_close_message=row.get('auto_close_message', ''),
+                auto_close_message_enabled=row.get('auto_close_message_enabled', ''),
+                auto_close_timeout=row.get('auto_close_timeout', ''),
+                auto_close_alert_message=row.get('auto_close_alert_message', ''),
+                auto_close_alert_message_enabled=row.get('auto_close_alert_message_enabled', ''),
+                auto_close_alert_message_time=row.get('auto_close_alert_message_time', ''),
+                recording_storage_location=row.get('recording_storage_location', ''),
+                service_level_threshold_in_seconds=row.get('service_level_threshold_in_seconds', ''),
+                service_level_exclude_short_abandoned_calls=row.get('service_level_exclude_short_abandoned_calls', ''),
+                service_level_exclude_long_abandoned_calls=row.get('service_level_exclude_long_abandoned_calls', ''),
+                service_level_exclude_abandoned_quit_engagements=row.get('service_level_exclude_abandoned_quit_engagements', ''),
+                service_level_target_in_percentage=row.get('service_level_target_in_percentage', ''),
+                agent_routing_profile_id=row.get('agent_routing_profile_id', '')
+            )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomCCUpdateQueue)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.queue_name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The CC Update Queue Job and associated collections have been successfully added")
         else:
             messages.warning(request, "No records found in the CSV file")
 

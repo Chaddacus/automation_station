@@ -17,6 +17,7 @@ urlpatterns = [
     path('zp_update_auto_receptionist', views.zp_update_auto_receptionist, name='zp_update_auto_receptionist'),
     path('zp_add_common_areas', views.zp_add_common_areas, name='zp_add_common_areas'),
     path('zcc_call_queue_create', views.zcc_call_queue_create, name='zcc_call_queue_create'),
+    path('zcc_call_queue_update', views.zcc_call_queue_update, name='zcc_call_queue_update'),
     path('jobs', views.jobs, name='jobs'),
     path('settings', views.settings, name='settings'),
     path('download_data/<int:job_id>/', views.download_data, name='download_data'),
