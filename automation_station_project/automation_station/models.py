@@ -288,7 +288,7 @@ class ZoomCCDisposition(models.Model):
     sub_disposition_name = models.CharField(max_length=100)
     current_index = models.CharField(max_length=100)
     parent_index = models.CharField(max_length=100)
-
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return "cc_create_disposition"
@@ -315,7 +315,7 @@ class ZoomCCAddUsers(models.Model):
     enable = models.CharField(max_length=100, default='false')
     max_agent_load = models.CharField(max_length=100, default='0')
     concurrent_message_capacity = models.CharField(max_length=100)
-
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return "cc_add_users"
@@ -328,6 +328,37 @@ class ZoomCCAddUsers(models.Model):
         else: 
             return f"Failed to add user: task cancelled"
 
+class ZoomCCInbox(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_cc_create_inbox'
+    )
+    inbox_name = models.CharField(max_length=100)
+    inbox_description = models.CharField(max_length=200)
+    inbox_type = models.CharField(max_length=100)
+    inbox_content_storage_location_code = models.CharField(max_length=100)
+    voicemail = models.CharField(max_length=100)
+    soft_delete = models.CharField(max_length=100)
+    soft_delete_days_limit = models.CharField(max_length=100)
+    voicemail_time_limit = models.CharField(max_length=100)
+    delete_voicemail_days_limit = models.CharField(max_length=100)
+    voicemail_transcription = models.CharField(max_length=100)
+    voicemail_notification_by_email = models.CharField(max_length=100)
+    enable = models.CharField(max_length=100)
+    include_voicemail_file = models.CharField(max_length=100)
+    include_voicemail_transcription = models.CharField(max_length=100)
+    forward_voicemail_to_emails = models.CharField(max_length=100)
+    emails = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    def __str__(self):
+        return "cc_create_inbox"
+    
+    def format_failed_collection(self):
+        return f"[{self.inbox_name}] failed to create inbox: task cancelled"
+       
 
 class Job(models.Model):
     STATUS_CHOICES = (

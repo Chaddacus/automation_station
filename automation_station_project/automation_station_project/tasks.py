@@ -853,3 +853,85 @@ def cc_add_users(guid, data, zoomclientId, zoomclientSecret, zoomaccountId):
                 }
             )
         logger.critical("message sent")
+
+
+@shared_task
+def cc_create_inbox(guid, data, zoomclientId, zoomclientSecret, zoomaccountId):
+
+        """
+        Create disposition in Zoom CC using a CSV file
+        """
+        
+        output = []
+        results = {}
+        success = 0
+        failed = 0
+        job_result = {}
+        
+        action_success = False
+        #reader = process_csv(request, zoomclientId, zoomclientSecret, zoomaccountId, output, action_success)
+
+        client = init_zoom_client(zoomclientId, zoomclientSecret, zoomaccountId)
+        for row in data:
+
+            if cache.get(f'stop_task_{guid}'):
+                output.append("Task Stopped")
+                break
+           
+            jobcollection = row.pop(0)
+            logger.critical(client)
+
+            keys = ['inbox_name','inbox_description','inbox_type','inbox_content_storage_location_code','voicemail','soft_delete',
+            'soft_delete_days_limit','voicemail_time_limit','delete_voicemail_days_limit','voicemail_transcription','voicemail_notification_by_email',
+            'enable','include_voicemail_file','include_voicemail_transcription','forward_voicemail_to_emails','emails']
+
+            params = {k: v for k, v in zip(keys, row) if v}
+            client_request = client.contact_center.post_request("/contact_center/inboxes/", data=params)
+            
+            logger.critical("Creating CC Disposition "+row[0])      
+
+            #output.append(client_request.json())
+
+            logger.critical("status code "+ str(client_request.status_code))
+            if client_request is not None and client_request.status_code in [200, 201]:
+                logger.critical("CC  Inbox Created Successfully")
+                output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                output.append("CC Inbox Created "+row[0])
+                output.append(client_request.json())
+                success +=1
+                action_success = True
+            
+            else:
+
+                logger.critical("CC Inbox Creation Failed")
+                logger.critical(client_request.json())
+                output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                output.append("CC Inbox Not Created "+row[0])
+                output.append(client_request.json())
+                failed +=1
+                action_success = False
+            
+            job_result[str(jobcollection)] = action_success
+            
+            channel_layer = get_channel_layer()
+            
+            logging.critical(channel_layer)
+
+           # time.sleep(2)
+            
+        results = {
+            "guid": guid,
+            "job_result" : job_result,
+            "success": success,
+            "failed": failed,
+            "output": output,
+        }
+            
+        async_to_sync(channel_layer.group_send)(
+                'job_group',
+                {
+                    'type': 'job.message',
+                    'message': results
+                }
+            )
+        logger.critical("message sent")

@@ -16,7 +16,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib import messages
 
 from django.contrib.contenttypes.models import ContentType
-from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers, ZoomPhoneAddSites, ZoomCCDisposition
+from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers, ZoomPhoneAddSites, ZoomCCDisposition, ZoomCCInbox
 from .models import ZoomPhoneAddAutoReceptionist, ZoomPhoneUpdateAutoReceptionist, ZoomPhoneAddCommonAreas, ZoomCCQueue, ZoomCCUpdateQueue, ZoomCCAddUsers
 from automation_station_project.tasks import add
 
@@ -587,6 +587,67 @@ def zcc_add_users(request):
 
         if job_created:
             messages.success(request, "The CC Add users Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+def zcc_create_inbox(request): 
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="create cc inbox",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomCCInbox.objects.create(
+                user=request.user,
+                inbox_name = row.get('inbox_name', ''),
+                inbox_description = row.get('inbox_description', ''),   
+                inbox_type = row.get('inbox_type', ''),
+                inbox_content_storage_location_code = row.get('inbox_content_storage_location_code', ''),
+                voicemail = row.get('voicemail', ''),
+                soft_delete =  row.get('soft_delete', ''),
+                soft_delete_days_limit = row.get('soft_delete_days_limit', ''),
+                voicemail_time_limit =  row.get('voicemail_time_limit', ''),
+                delete_voicemail_days_limit =  row.get('delete_voicemail_days_limit', ''),
+                voicemail_transcription = row.get('voicemail_transcription', ''), 
+                voicemail_notification_by_email = row.get('voicemail_notification_by_email', ''), 
+                enable = row.get('enable', ''),
+                include_voicemail_file = row.get('include_voicemail_file', ''), 
+                include_voicemail_transcription = row.get('include_voicemail_transcription', ''),
+                forward_voicemail_to_emails = row.get('forward_voicemail_to_emails', ''), 
+                emails =  row.get('emails', ''),
+                created_at =  row.get('created_at', ''),
+                        )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomCCInbox)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.inbox_name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The CC Create Inbox Job and associated collections have been successfully added")
         else:
             messages.warning(request, "No records found in the CSV file")
 

@@ -20,6 +20,7 @@ urlpatterns = [
     path('zcc_call_queue_update', views.zcc_call_queue_update, name='zcc_call_queue_update'),
     path('zcc_create_disposition', views.zcc_create_disposition, name='zcc_create_disposition'),
     path('zcc_add_users', views.zcc_add_users, name='zcc_add_users'),
+    path('zcc_create_inbox', views.zcc_create_inbox, name='zcc_create_inbox'),
     path('jobs', views.jobs, name='jobs'),
     path('settings', views.settings, name='settings'),
     path('download_data/<int:job_id>/', views.download_data, name='download_data'),
