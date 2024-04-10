@@ -1,2 +1,2 @@
-user_id (ignored if email given),user_email,role_name,country_iso_code,client_integration (Default|Salesforce|etc.),user_access (active|inactive),region_id,channel_settings,multi_channel_engagements,enable,max_agent_load,concurrent_message_capacity
-,trent.charlton@cloud-warriors.com,,,,,,,,,,
+user_id,user_email,role_name,country_iso_code,client_integration,user_access,region_id,channel_settings,multi_channel_engagements,enable,max_agent_load,concurrent_message_capacity
+,trent.charlton@cloud-warriors.com,Admin,,,,,,,,,

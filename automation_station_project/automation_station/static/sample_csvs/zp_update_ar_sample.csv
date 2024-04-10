@@ -1,2 +1,2 @@
-name,cost_center,department,extension_number,name_change(very_optional),audio_prompt_language(en-US | es-MX | etc.),timezone(America/Los_Angeles | America/New_York | UTC | etc.)
+name,cost_center,department,extension_number,name_change,audio_prompt_language,timezone
 testAR,CC-001,department,903,,en-US,America/Los_Angeles

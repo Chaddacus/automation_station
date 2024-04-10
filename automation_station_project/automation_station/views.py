@@ -16,7 +16,8 @@ from django.contrib.auth import views as auth_views
 from django.contrib import messages
 
 from django.contrib.contenttypes.models import ContentType
-from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers, ZoomPhoneAddSites, ZoomPhoneAddAutoReceptionist
+from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers, ZoomPhoneAddSites, ZoomCCDisposition, ZoomCCInbox
+from .models import ZoomPhoneAddAutoReceptionist, ZoomPhoneUpdateAutoReceptionist, ZoomPhoneAddCommonAreas, ZoomCCQueue, ZoomCCUpdateQueue, ZoomCCAddUsers
 from automation_station_project.tasks import add
 
 from time import sleep
@@ -257,6 +258,401 @@ def zp_add_auto_receptionist(request):
             messages.warning(request, "No records found in the CSV file")
 
         return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+def zp_update_auto_receptionist(request): 
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="update auto receptionist",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomPhoneUpdateAutoReceptionist.objects.create(
+                user=request.user,
+                name=row['name'],
+                cost_center=row.get('cost_center'),
+                department=row.get('department', ''),
+                extension_number=row['extension_number'],
+                name_change=row.get('name_change', ''),
+                audio_prompt_language=row.get('audio_prompt_language', ''),
+                timezone=row.get('timezone', ''),
+            )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomPhoneUpdateAutoReceptionist)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The Update Auto Receptionists Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+def zp_add_common_areas(request): 
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="add common areas",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomPhoneAddCommonAreas.objects.create(
+                user=request.user,
+                calling_plan_code=row['calling_plan_code'],
+                country_iso_code=row['country_iso_code'],
+                display_name=row['display_name'],
+                extension_number=row['extension_number'],
+                site_name=row['site_name'],
+                timezone=row['timezone']
+            )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomPhoneAddCommonAreas)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.display_name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The Add Common Areas Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+    
+def zcc_call_queue_create(request): 
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="create cc call queue",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomCCQueue.objects.create(
+                user=request.user,
+                queue_name=row['queue_name'],
+                queue_description=row['queue_description'],
+                queue_type = row['queue_type']
+            )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomCCQueue)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.queue_name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The CC Create Queue Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+    
+def zcc_call_queue_update(request): 
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="update cc call queue",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomCCUpdateQueue.objects.create(
+                user=request.user,
+                queue_name=row['queue_name'],
+                queue_description=row.get('queue_description', ''), 
+                max_wait_time=row.get('max_wait_time', ''),
+                wrap_up_time=row.get('wrap_up_time', ''),
+                max_engagement_in_queue=row.get('max_engagement_in_queue', ''),
+                short_abandon_enable=row.get('short_abandon_enable', ''),
+                short_abandon_threshold=row.get('short_abandon_threshold', ''),
+                channel_types=row.get('channel_types', ''),
+                distribution_type=row.get('distribution_type', ''),
+                distribution_duration_in_seconds=row.get('distribution_duration_in_seconds', ''),
+                connecting_media_id=row.get('connecting_media_id', ''),
+                transferring_media_id=row.get('transferring_media_id', ''),
+                holding_media_id=row.get('holding_media_id', ''),
+                waiting_room_id=row.get('waiting_room_id', ''),
+                message_accept=row.get('message_accept', ''),
+                wrap_up_expiration=row.get('wrap_up_expiration', ''),
+                overflow_to_goodbye_message=row.get('overflow_to_goodbye_message', ''),
+                overflow_to_queue_id=row.get('overflow_to_queue_id', ''),
+                overflow_to_flow_id=row.get('overflow_to_flow_id', ''),
+                overflow_to_inbox_id=row.get('overflow_to_inbox_id', ''),
+                auto_close_message=row.get('auto_close_message', ''),
+                auto_close_message_enabled=row.get('auto_close_message_enabled', ''),
+                auto_close_timeout=row.get('auto_close_timeout', ''),
+                auto_close_alert_message=row.get('auto_close_alert_message', ''),
+                auto_close_alert_message_enabled=row.get('auto_close_alert_message_enabled', ''),
+                auto_close_alert_message_time=row.get('auto_close_alert_message_time', ''),
+                recording_storage_location=row.get('recording_storage_location', ''),
+                service_level_threshold_in_seconds=row.get('service_level_threshold_in_seconds', ''),
+                service_level_exclude_short_abandoned_calls=row.get('service_level_exclude_short_abandoned_calls', ''),
+                service_level_exclude_long_abandoned_calls=row.get('service_level_exclude_long_abandoned_calls', ''),
+                service_level_exclude_abandoned_quit_engagements=row.get('service_level_exclude_abandoned_quit_engagements', ''),
+                service_level_target_in_percentage=row.get('service_level_target_in_percentage', ''),
+                agent_routing_profile_id=row.get('agent_routing_profile_id', '')
+            )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomCCUpdateQueue)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.queue_name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The CC Update Queue Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+def zcc_create_disposition(request): 
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="create cc disposition",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomCCDisposition.objects.create(
+                user=request.user,
+                status = row.get('status', ''),
+                disposition_name = row.get('disposition_name', ''),
+                disposition_description = row.get('disposition_description', ''),
+                disposition_type = row.get('disposition_type', ''),
+                sub_disposition_name = row.get('sub_disposition_name', ''),
+                current_index = row.get('current_index', ''),
+                parent_index = row.get('parent_index', ''),
+            )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomCCDisposition)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.disposition_name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The CC Create Disposition Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+
+def zcc_add_users(request): 
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="add cc users",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomCCAddUsers.objects.create(
+                user=request.user,
+                new_user_id = row.get('user_id', ''),
+                user_email = row.get('user_email', ''),
+                role_name = row.get('role_name', ''),
+                country_iso_code = row.get('country_iso_code', ''),
+                client_integration = row.get('client_integration', ''),
+                user_access = row.get('user_access', ''),
+                region_id = row.get('region_id', ''),
+                channel_settings = row.get('channel_settings', ''),
+                multi_channel_engagements = row.get('multi_channel_engagements', ''),
+                enable = row.get('enable', ''),
+                max_agent_load = row.get('max_agent_load', ''),
+                concurrent_message_capacity = row.get('concurrent_message_capacity', ''),
+            )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomCCAddUsers)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.new_user_id}" if site.new_user_id else f"Job for {site.user_email}",
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The CC Add users Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+def zcc_create_inbox(request): 
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="create cc inbox",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+                # Create a Site instance for each row
+            site = ZoomCCInbox.objects.create(
+                user=request.user,
+                inbox_name = row.get('inbox_name', ''),
+                inbox_description = row.get('inbox_description', ''),   
+                inbox_type = row.get('inbox_type', ''),
+                inbox_content_storage_location_code = row.get('inbox_content_storage_location_code', ''),
+                voicemail = row.get('voicemail', ''),
+                soft_delete =  row.get('soft_delete', ''),
+                soft_delete_days_limit = row.get('soft_delete_days_limit', ''),
+                voicemail_time_limit =  row.get('voicemail_time_limit', ''),
+                delete_voicemail_days_limit =  row.get('delete_voicemail_days_limit', ''),
+                voicemail_transcription = row.get('voicemail_transcription', ''), 
+                voicemail_notification_by_email = row.get('voicemail_notification_by_email', ''), 
+                enable = row.get('enable', ''),
+                include_voicemail_file = row.get('include_voicemail_file', ''), 
+                include_voicemail_transcription = row.get('include_voicemail_transcription', ''),
+                forward_voicemail_to_emails = row.get('forward_voicemail_to_emails', ''), 
+                emails =  row.get('emails', ''),
+                created_at =  row.get('created_at', ''),
+                        )
+
+            # Now create a JobCollection for each Site linking it to the created Job
+            content_type = ContentType.objects.get_for_model(ZoomCCInbox)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {site.inbox_name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=site.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The CC Create Inbox Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
 
 @login_required
 def index(request):

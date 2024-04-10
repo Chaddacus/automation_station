@@ -173,6 +173,32 @@
                     </form>
                 </div>
             </div>
+            <div class="justify-center rounded mx-auto">
+                <div class="bg-gray-700 rounded-md border border-solid border-gray-700  p-4 mx-auto">
+                    <h1 class="text-3xl text-white font-bold mx-4 my-4">Update Auto Receptionist</h1>
+                    <form method="POST" action="{% url 'zp_update_auto_receptionist' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
+                        <div class="mb-6">
+                            <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
+                        </div>
+                        <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
+                        <a href="{% static 'sample_csvs/zp_update_ar_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                    </form>
+                </div>
+            </div>
+            <div class="justify-center rounded mx-auto">
+                <div class="bg-gray-700 rounded-md border border-solid border-gray-700  p-4 mx-auto">
+                    <h1 class="text-3xl text-white font-bold mx-4 my-4">Add Common Areas</h1>
+                    <form method="POST" action="{% url 'zp_add_common_areas' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
+                        <div class="mb-6">
+                            <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
+                        </div>
+                        <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
+                        <a href="{% static 'sample_csvs/zp_add_common_area_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                    </form>
+                </div>
+            </div>
         </div>
         
         <!-- Begin ZCC automation options -->
@@ -187,12 +213,13 @@
             <div class="justify-center rounded mx-auto">
                 <div class="bg-gray-700 rounded-md border border-solid border-gray-700 p-4 mx-auto">
                     <h1 class="text-3xl text-white font-bold mx-4 my-4">Create ZCC Call Queues</h1>
-                    <form method="POST" action="" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                    <form method="POST" action="{% url 'zcc_call_queue_create' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
                         <div class="mb-6">
                             <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
                         </div>
                         <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
-                        <a href="" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                        <a href="{% static 'sample_csvs/zcc_create_queue_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
                     </form>
                 </div>
             </div>
@@ -200,12 +227,13 @@
             <div class="justify-center rounded mx-auto">
                 <div class="bg-gray-700 rounded-md border border-solid border-gray-700 p-4 mx-auto">
                     <h1 class="text-3xl text-white font-bold mx-4 my-4">Update ZCC Call Queues</h1>
-                    <form method="POST" action="" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                    <form method="POST" action="{% url 'zcc_call_queue_update' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
                         <div class="mb-6">
                             <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
                         </div>
                         <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
-                        <a href="" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                        <a href="{% static 'sample_csvs/zcc_update_queue_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
                     </form>
                 </div>
             </div>
@@ -213,12 +241,13 @@
             <div class="justify-center rounded mx-auto">
                 <div class="bg-gray-700 rounded-md border border-solid border-gray-700 p-4 mx-auto">
                     <h1 class="text-3xl text-white font-bold mx-4 my-4">Create ZCC Disposition</h1>
-                    <form method="POST" action="" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                    <form method="POST" action="{% url 'zcc_create_disposition' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
                         <div class="mb-6">
                             <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
                         </div>
                         <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
-                        <a href="" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                        <a href="{% static 'sample_csvs/zcc_create_disposition_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
                     </form>
                 </div>
             </div>
@@ -226,12 +255,13 @@
             <div class="justify-center rounded mx-auto">
                 <div class="bg-gray-700 rounded-md border border-solid border-gray-700 p-4 mx-auto">
                     <h1 class="text-3xl text-white font-bold mx-4 my-4">ZCC Add Users</h1>
-                    <form method="POST" action="" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                    <form method="POST" action="{% url 'zcc_add_users' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
                         <div class="mb-6">
                             <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
                         </div>
                         <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
-                        <a href="" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                        <a href="{% static 'sample_csvs/zcc_add_users_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
                     </form>
                 </div>
             </div>
@@ -239,12 +269,13 @@
             <div class="justify-center rounded mx-auto">
                 <div class="bg-gray-700 rounded-md border border-solid border-gray-700 p-4 mx-auto">
                     <h1 class="text-3xl text-white font-bold mx-4 my-4">Create ZCC Inbox</h1>
-                    <form method="POST" action="" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                    <form method="POST" action="{% url 'zcc_create_inbox' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
                         <div class="mb-6">
                             <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
                         </div>
                         <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
-                        <a href="" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                        <a href="{% static 'sample_csvs/zcc_create_inbox_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
                     </form>
                 </div>
             </div>

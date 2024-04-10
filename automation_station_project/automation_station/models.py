@@ -166,7 +166,200 @@ class ZoomPhoneAddAutoReceptionist(models.Model):
     def format_failed_collection(self):
         return f"[{self.name}] failed to add auto receptionist: task cancelled"
         
+
+class ZoomPhoneUpdateAutoReceptionist(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_phone_update_ar'
+    )
+    name = models.CharField(max_length=100)
+    cost_center = models.CharField(max_length=100)
+    department = models.CharField(max_length=100)
+    extension_number = models.IntegerField()
+    name_change = models.CharField(max_length=100)
+    audio_prompt_language = models.CharField(max_length=100)
+    timezone = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "update_auto_receptionist"
     
+    def format_failed_collection(self):
+        return f"[{self.name}] failed to update auto receptionist: task cancelled"
+
+
+class ZoomPhoneAddCommonAreas(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_phone_add_common_areas'
+    )
+    calling_plan_code = models.IntegerField()
+    country_iso_code = models.CharField(max_length=100)
+    display_name = models.CharField(max_length=100)
+    extension_number = models.IntegerField()
+    site_name = models.CharField(max_length=100)
+    timezone = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "add_common_areas"
+    
+    def format_failed_collection(self):
+        return f"[{self.display_name}] failed to add common area: task cancelled"
+
+class ZoomCCQueue(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_cc_create_call_queue'
+    )
+
+    queue_name = models.CharField(max_length=100)
+    queue_description = models.CharField(max_length=200)
+    queue_type = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "cc_create_call_queue"
+    
+    def format_failed_collection(self):
+        return f"[{self.queue_name}] failed to create cc call queue: task cancelled"
+
+class ZoomCCUpdateQueue(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_cc_update_call_queue'
+    )
+
+    queue_name = models.CharField(max_length=100)
+    queue_description = models.CharField(max_length=200)
+    max_wait_time = models.CharField(max_length=100)
+    wrap_up_time = models.CharField(max_length=100)
+    max_engagement_in_queue = models.CharField(max_length=100)
+    short_abandon_enable = models.CharField(max_length=100)
+    short_abandon_threshold = models.CharField(max_length=100)
+    channel_types = models.CharField(max_length=100)
+    distribution_type = models.CharField(max_length=100)
+    distribution_duration_in_seconds = models.CharField(max_length=100)
+    connecting_media_id = models.CharField(max_length=100)
+    transferring_media_id = models.CharField(max_length=100)
+    holding_media_id = models.CharField(max_length=100)
+    waiting_room_id = models.CharField(max_length=100)
+    message_accept = models.CharField(max_length=100)
+    wrap_up_expiration = models.CharField(max_length=100)
+    overflow_to_goodbye_message = models.CharField(max_length=200)
+    overflow_to_queue_id = models.CharField(max_length=100)
+    overflow_to_flow_id = models.CharField(max_length=100)
+    overflow_to_inbox_id = models.CharField(max_length=100)
+    auto_close_message = models.CharField(max_length=200)
+    auto_close_message_enabled = models.CharField(max_length=100)
+    auto_close_timeout = models.CharField(max_length=100)
+    auto_close_alert_message = models.CharField(max_length=200)
+    auto_close_alert_message_enabled = models.CharField(max_length=100)
+    auto_close_alert_message_time = models.CharField(max_length=100)
+    recording_storage_location = models.CharField(max_length=100)
+    service_level_threshold_in_seconds = models.CharField(max_length=100)
+    service_level_exclude_short_abandoned_calls = models.CharField(max_length=100)
+    service_level_exclude_long_abandoned_calls = models.CharField(max_length=100)
+    service_level_exclude_abandoned_quit_engagements = models.CharField(max_length=100)
+    service_level_target_in_percentage = models.CharField(max_length=100)
+    agent_routing_profile_id = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "cc_update_call_queue"
+    
+    def format_failed_collection(self):
+        return f"[{self.queue_name}] failed to update cc call queue: task cancelled"
+
+class ZoomCCDisposition(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_cc_create_disposition'
+    )
+    status = models.CharField(max_length=100)
+    disposition_name = models.CharField(max_length=100)
+    disposition_description = models.CharField(max_length=200)
+    disposition_type = models.CharField(max_length=100)
+    sub_disposition_name = models.CharField(max_length=100)
+    current_index = models.CharField(max_length=100)
+    parent_index = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "cc_create_disposition"
+    
+    def format_failed_collection(self):
+        return f"[{self.disposition_name}] failed to create disposition: task cancelled"
+
+
+class ZoomCCAddUsers(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_cc_add_users'
+    )
+    new_user_id = models.CharField(max_length=100)
+    user_email = models.CharField(max_length=100)
+    role_name = models.CharField(max_length=100)
+    country_iso_code = models.CharField(max_length=100)
+    client_integration = models.CharField(max_length=100)
+    user_access = models.CharField(max_length=100)
+    region_id = models.CharField(max_length=100)
+    channel_settings = models.CharField(max_length=100)
+    multi_channel_engagements = models.CharField(max_length=100, default='false')
+    enable = models.CharField(max_length=100, default='false')
+    max_agent_load = models.CharField(max_length=100, default='0')
+    concurrent_message_capacity = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "cc_add_users"
+    
+    def format_failed_collection(self):
+        if self.user_email:
+            return f"[{self.user_email}] failed to add user: task cancelled"
+        elif self.user_id: 
+            return f"[{self.user_id}] failed to add user: task cancelled"
+        else: 
+            return f"Failed to add user: task cancelled"
+
+class ZoomCCInbox(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_cc_create_inbox'
+    )
+    inbox_name = models.CharField(max_length=100)
+    inbox_description = models.CharField(max_length=200)
+    inbox_type = models.CharField(max_length=100)
+    inbox_content_storage_location_code = models.CharField(max_length=100)
+    voicemail = models.CharField(max_length=100)
+    soft_delete = models.CharField(max_length=100)
+    soft_delete_days_limit = models.CharField(max_length=100)
+    voicemail_time_limit = models.CharField(max_length=100)
+    delete_voicemail_days_limit = models.CharField(max_length=100)
+    voicemail_transcription = models.CharField(max_length=100)
+    voicemail_notification_by_email = models.CharField(max_length=100)
+    enable = models.CharField(max_length=100)
+    include_voicemail_file = models.CharField(max_length=100)
+    include_voicemail_transcription = models.CharField(max_length=100)
+    forward_voicemail_to_emails = models.CharField(max_length=100)
+    emails = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    def __str__(self):
+        return "cc_create_inbox"
+    
+    def format_failed_collection(self):
+        return f"[{self.inbox_name}] failed to create inbox: task cancelled"
+       
+
 class Job(models.Model):
     STATUS_CHOICES = (
         ('scheduled', 'Scheduled'),
