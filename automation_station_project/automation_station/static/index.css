@@ -16,6 +16,9 @@
         opacity: 0;
     }
 }
+.alert-warning {
+    color: red;
+}
 
 .action-header {
     display: flex;

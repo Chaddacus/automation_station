@@ -339,3 +339,27 @@ def auto_receptionist_id(ar_name, client):
             break
 
     return None
+
+def validate_emergency_csv(file):
+
+    reader = csv.reader(codecs.getreader("utf-8")(file.stream))
+
+    headers = next(reader)
+    if headers != ['name', 'emails', 'target_name']:
+        return "Invalid headers in CSV file."
+
+    
+
+    email_regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    for row in reader:
+        if len(row) != 3:
+            return "Invalid number of columns in a row."
+        if not isinstance(row[0], str) or not isinstance(row[2], str):
+            return "Invalid data type in columns."
+        emails = row[1].split(';')
+        for email in emails:
+            email = email.strip()  # Remove leading/trailing whitespace
+            if not re.fullmatch(email_regex, email):
+                return f"Invalid email address: {email}"
+
+    return None

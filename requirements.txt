@@ -24,7 +24,7 @@ Deprecated==1.2.14
 Django==5.0.1
 django-celery-results==2.5.1
 django-oauth-toolkit==2.3.0
-django-redis==5.0.0
+django-redis==5.4.0
 gevent==24.2.1
 greenlet==3.0.3
 hyperlink==21.0.0
@@ -57,6 +57,6 @@ urllib3==2.2.0
 vine==5.1.0
 wcwidth==0.2.13
 wrapt==1.16.0
-
+#zoomus @ file:///C:/Users/nasty-vr/Documents/inbuildy/clients/cloudwarriors/code/automation-station/zoomus
 zope.event==5.0
 zope.interface==6.2

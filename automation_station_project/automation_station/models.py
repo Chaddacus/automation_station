@@ -66,7 +66,7 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    active_auth = models.OneToOneField(ZoomAuthServerToServer, on_delete=models.SET_NULL, null=True, related_name='+')
+    active_auth = models.ForeignKey(ZoomAuthServerToServer, on_delete=models.SET_NULL, null=True, related_name='+')
     email = models.EmailField(unique=True)
     
     is_active = models.BooleanField(default=True)
@@ -358,7 +358,19 @@ class ZoomCCInbox(models.Model):
     
     def format_failed_collection(self):
         return f"[{self.inbox_name}] failed to create inbox: task cancelled"
-       
+    
+class ZoomEmergencyAlertNotificationV1(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zoom_emergency_alert_notification_v1'
+    )
+    name = models.CharField(max_length=255)
+    emails = models.TextField()
+    target_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return "zoom_emergency_alert_notification_v1"       
 
 class Job(models.Model):
     STATUS_CHOICES = (

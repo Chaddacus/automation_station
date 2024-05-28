@@ -103,6 +103,113 @@
     <div class="p-4 sm:ml-64 mt-4">
         <div id="zoomphone"class="anchor-offset flex items-center justify-left h-24 mb-4 mt-16 rounded-md text-white bg-gray-800">
             <p class="text-3xl text-bold px-5">
+                Zoom Phone v1
+            </p>
+        </div>
+        <br>
+        <div id="zplayout" class="flex flex-wrap items-center gap-2 mb-2">
+            <div class="justify-center rounded mx-auto">
+                <div class="bg-gray-700 rounded-md border border-solid border-gray-700 p-4 mx-auto">
+                    <span id="emergency_alert_notification_v1" data-tooltip="update emergency alert emergency alert notifications." class="tooltip-trigger" style="color: white; float: right; font-weight: bold; font-size: larger;">?</span>
+                    <h1 class="text-3xl text-white font-bold mx-4 my-4">Emergency Alert Notification V1</h1>
+                    <form method="POST" action="{% url 'emergency_alert_notification_v1' %}"enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
+                        <div class="mb-6">
+                            <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
+                        </div>
+                        <input type="submit" id="upload-button" value="Job Create" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
+                        <a href="{% static 'sample_csvs/zp_emergency_alert_notification_v1.csv' %}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                    </form>
+                </div>
+            </div>
+            <div class="justify-center rounded mx-auto">
+                <div class="bg-gray-700 rounded-md border border-solid border-gray-700  p-4 mx-auto">
+                    <h1 class="text-3xl text-white font-bold mx-4 my-4">Add Call Queue Members</h1>
+                    <form method="POST" action="{% url 'zp_call_queue_members_create' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
+                        <div class="mb-6">
+                            <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
+                        </div>
+                        <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
+                        <a href="{% static 'sample_csvs/zp_callqueue_member_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                    </form>
+                </div>
+            </div>
+            <div class="justify-center rounded mx-auto">
+                <div class="bg-gray-700 rounded-md border border-solid border-gray-700  p-4 mx-auto">
+                    <h1 class="text-3xl text-white font-bold mx-4 my-4">Add Call Queue Managers</h1>
+                    <form method="POST" action="" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        <div class="mb-6">
+                            <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
+                        </div>
+                        <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
+                        <a href="" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                    </form>
+                </div>
+            </div>
+            <div class="justify-center rounded mx-auto">
+                <div class="bg-gray-700 rounded-md border border-solid border-gray-700  p-4 mx-auto">
+                    <h1 class="text-3xl text-white font-bold mx-4 my-4">Add Sites</h1>
+                    <form method="POST" action="{% url 'zp_add_sites' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
+                        <div class="mb-6">
+                            <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
+                        </div>
+                        <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
+                        <a href="{% static 'sample_csvs/zp_add_sites_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                    </form>
+                </div>
+            </div>
+            <div class="justify-center rounded mx-auto">
+                <div class="bg-gray-700 rounded-md border border-solid border-gray-700  p-4 mx-auto">
+                    <h1 class="text-3xl text-white font-bold mx-4 my-4">Add Auto Receptionist</h1>
+                    <form method="POST" action="{% url 'zp_add_auto_receptionist' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
+                        <div class="mb-6">
+                            <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
+                        </div>
+                        <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
+                        <a href="{% static 'sample_csvs/zp_add_ar_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                    </form>
+                </div>
+            </div>
+            <div class="justify-center rounded mx-auto">
+                <div class="bg-gray-700 rounded-md border border-solid border-gray-700  p-4 mx-auto">
+                    <h1 class="text-3xl text-white font-bold mx-4 my-4">Update Auto Receptionist</h1>
+                    <form method="POST" action="{% url 'zp_update_auto_receptionist' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
+                        <div class="mb-6">
+                            <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
+                        </div>
+                        <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
+                        <a href="{% static 'sample_csvs/zp_update_ar_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                    </form>
+                </div>
+            </div>
+            <div class="justify-center rounded mx-auto">
+                <div class="bg-gray-700 rounded-md border border-solid border-gray-700  p-4 mx-auto">
+                    <h1 class="text-3xl text-white font-bold mx-4 my-4">Add Common Areas</h1>
+                    <form method="POST" action="{% url 'zp_add_common_areas' %}" enctype="multipart/form-data" class="w-auto border-black border-solid">
+                        {% csrf_token %}
+                        <div class="mb-6">
+                            <input type="file" name="csv_file" id="csv_file" class="bg-white text-black rounded-md ">
+                        </div>
+                        <input type="submit" id="upload-button" value="Upload" class="bg-blue-500 hover:bg-blue-600 text-white rounded-md px-4 py-2">
+                        <a href="{% static 'sample_csvs/zp_add_common_area_sample.csv'%}" class="mx-4 text-md text-white" download>Download Sample CSV</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+
+
+
+        <div id="zoomphone"class="anchor-offset flex items-center justify-left h-24 mb-4 mt-16 rounded-md text-white bg-gray-800">
+            <p class="text-3xl text-bold px-5">
                 Zoom Phone
             </p>
         </div>

@@ -8,6 +8,7 @@ import json
 
 
 from .helpers import process_csv, init_zoom_client, site_id, call_queue_id, common_area_extension_id, site_json, auto_receptionist_id, cc_queue_id, get_role_id
+from .v1api import api_pbx_account_info, add_alert_rule, get_site_id
 from automation_station.models import Job, JobExecutionLogs
 import logging
 
@@ -20,6 +21,121 @@ logger = logging.getLogger(__name__)
 
 
 
+@shared_task
+def zoom_emergency_alert_notification_v1(guid, data, token):
+    output = []
+    results = {}
+    success = 0
+    failed = 0
+    job_result = {}
+
+    
+    bearer_token = token
+
+        
+    account_json = api_pbx_account_info(bearer_token)
+
+    
+        
+    
+
+    for row in data:
+
+        if account_json:
+            account_id = account_json['accountId']
+            
+        else:
+            
+            output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            output.append("Error retrieving account id, invalid token, or no account found.")
+            output.append("Call Queue Not Created ")
+            action_success = False
+            failed +=1
+            job_result[str(row['id'])] = action_success
+            break
+
+        if cache.get(f'stop_task_{guid}'):
+            output.append("Task Stopped")
+            break
+
+        siteid = get_site_id(bearer_token, account_id, row['target_name'])
+
+        if siteid is None:
+            output.append(f"Site {row['target_name']} not found")
+            continue
+
+        emails = row['emails'].replace(';', ',').split(',')
+        payload = {
+            "name": "test3",
+            "siteId": siteid,
+            "target": siteid,
+            "module": 4,
+            "type": 19,
+            "status": 1,
+            "mode": 1,
+            "from": "00:00:00",
+            "to": "00:00:00",
+            "frequency": 0,
+            "timezone": "UTC",
+            "daysOfWeek": [1, 2, 3, 4, 5, 6, 7],
+            "emails": emails,
+            "trigger_condition": {
+                "event": "emergency call alert",
+                "severity": 1
+            },
+            "targetName": row['target_name']
+        }
+
+        response = add_alert_rule(bearer_token, account_id, payload)
+
+        if response.status_code == 200:
+            output.append(f"Emergency alert notification for {row['target_name']} created successfully")
+            action_success = True
+            success += 1
+        else:
+            output.append(f"Emergency alert notification for {row['target_name']} failed")
+            output.append(response.json())
+            action_success = False
+            failed += 1
+
+        job_result[str(row['id'])] = action_success
+
+    
+            
+    
+    
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+            'job_group',
+            {
+                'type': 'job.message',
+                'message': {
+                    'guid': guid,
+                    'output': output,
+                    'success': success,
+                    'failed': failed,
+                    'job_result': job_result,
+                }
+            }
+        )
+
+    results = {
+        "guid": guid,
+        "job_result": job_result,
+        "success": success,
+        "failed": failed,
+        "output": output,
+    }
+
+    async_to_sync(channel_layer.group_send)(
+        'job_group',
+        {
+            'type': 'job.message',
+            'message': results
+        }
+    )
+    logger.critical("message sent")
 
 @shared_task
 def add(x, y):

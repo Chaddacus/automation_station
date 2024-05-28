@@ -24,5 +24,6 @@ urlpatterns = [
     path('jobs', views.jobs, name='jobs'),
     path('settings', views.settings, name='settings'),
     path('download_data/<int:job_id>/', views.download_data, name='download_data'),
+    path('emergency_alert_notification_v1', views.emergency_alert_notification_v1, name='emergency_alert_notification_v1'),
     re_path('.*', TemplateView.as_view(template_name='index.html')),
 ]

@@ -18,6 +18,7 @@ from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers, ZoomPhoneAddSites, ZoomCCDisposition, ZoomCCInbox
 from .models import ZoomPhoneAddAutoReceptionist, ZoomPhoneUpdateAutoReceptionist, ZoomPhoneAddCommonAreas, ZoomCCQueue, ZoomCCUpdateQueue, ZoomCCAddUsers
+from .models import ZoomEmergencyAlertNotificationV1
 from automation_station_project.tasks import add
 
 from time import sleep
@@ -31,7 +32,8 @@ from decouple import config
 from io import StringIO
 from .models import Job
 from .models import JobExecutionLogs
-from automation_station_project.helpers import site_id, init_zoom_client
+from automation_station_project.helpers import site_id, init_zoom_client, check_utf8, validate_emergency_csv
+from automation_station_project.v1api import validate_zoom_pbx_token
 
 
 
@@ -43,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 CLIENT_ID = config('CLIENT_ID')
 CLIENT_SECRET = config('CLIENT_SECRET')
-ACCOUNT_ID = config('ACCOUNT_ID')
+#ACCOUNT_ID = config('ACCOUNT_ID')
 REDIRECT_URI = config('REDIRECT_URI')
 TOKEN_URL= config('TOKEN_URL')
 CALLBACK_URL = config('CALLBACK_URL')
@@ -677,23 +679,115 @@ def jobs(request):
 
 @login_required
 def settings(request):
+    print("settings")
     logger.critical("settings")
     logging.critical(request.user)
     user_groups = request.user.groups.all()
     logger.critical(user_groups)
+    
     servertoserver = ZoomAuthServerToServer.objects.filter(team__in=user_groups)
     logger.critical(servertoserver)
     # Get the first matching team for each ZoomAuthServerToServer instance
     matching_teams = {server: server.team.filter(id__in=user_groups).first() for server in servertoserver}
-    logger.critical("here" +str(matching_teams))
+    logger.critical("teams " +str(matching_teams))
     
     # Get the first item in the dictionary
     if matching_teams:
         first_key, first_value = next(iter(matching_teams.items()))
         logger.critical(f"First Server: {first_key}, First Team: {first_value}")
-   
+
+    if request.method == 'POST':
+        token = request.POST.get('pbx_token')
+        if token:
+            request.session['zoom_pbx_token'] = token
+
+            if not validate_token(request):
+                
+                return redirect('settings')
+
+            messages.success(request, "Token successfully saved")
+        else:
+            messages.warning(request, "No token found in the request")
+        
+        return redirect('settings')
+    
+    print(servertoserver)
 
     return render(request, 'settings.html', {'servertoserver': servertoserver, 'matching_team': matching_teams})
+
+
+def emergency_alert_notification_v1(request):
+
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        
+        if not validate_token(request):
+            return redirect('settings')
+            
+            
+        
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="emergency alert notification v1",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+            alert_notification = ZoomEmergencyAlertNotificationV1.objects.create(
+                user=request.user,
+                name = row.get('name', ''),
+                emails = row.get('emails', ''),
+                target_name = row.get('target_name', ''),
+            )
+
+            content_type = ContentType.objects.get_for_model(ZoomEmergencyAlertNotificationV1)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {alert_notification.name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=alert_notification.pk,
+            )
+
+        if job_created:
+            messages.success(request, "Emergency Alert Notification V1 Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+                # Create a Site instance for each row
+
+def validate_token(request):
+    
+    if not request.session.get('zoom_pbx_token'):
+        print("in pre validate not token in request")
+        messages.warning(request, "No valid token found. Please submit your token into the settings page")
+
+        return False
+    
+    if not validate_zoom_pbx_token(request):
+        messages.warning(request, "Your token is not valid, please submit a new token.")
+        return False
+    return True
+       
+
+    
+
+    
+    
 
 def zoomlogin(request):
      authorization_url, state = zoom.authorization_url(AUTHORIZATION_URL)

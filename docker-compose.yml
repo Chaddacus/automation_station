@@ -9,6 +9,7 @@ services:
       - "6379:6379"
 
   celery:
+    image: celery:latest
     container_name: celery
     build: .
     command: celery -A automation_station_project worker --loglevel=info

@@ -7,6 +7,7 @@ from django.apps import apps
 from django.template.loader import render_to_string
 from asgiref.sync import sync_to_async
 from automation_station_project.tasks import create_call_queue, add_call_queue_members, add_sites, add_auto_receptionist, update_auto_receptionist, add_common_areas, cc_create_call_queue, cc_update_call_queue, cc_create_disposition, cc_add_users, cc_create_inbox
+from automation_station_project.tasks import zoom_emergency_alert_notification_v1
 from automation_station_project.helpers import init_zoom_client
 from django.forms.models import model_to_dict
 import json
@@ -225,6 +226,7 @@ class JobConsumer(AsyncWebsocketConsumer):
         logger.critical(f"Running selected items: {data}")
         guids = data['guids']
         self.user = self.scope["user"]
+        token = self.scope['session'].get('zoom_pbx_token')
 
         for guid in guids:
 
@@ -246,8 +248,7 @@ class JobConsumer(AsyncWebsocketConsumer):
             job_logs = JobExecutionLogs(job_id=job.id, status='progress')
             job_logs.save()
 
-
-            logger.critical(self.user.active_auth)
+            
 
             zoom_auth = self.scope['user'].active_auth
 
@@ -265,21 +266,27 @@ class JobConsumer(AsyncWebsocketConsumer):
 
             formatted_data = self.format_data(related_objects, keys_to_remove)
 
-            logger.critical("here "+str(formatted_data))
+            logger.critical("Data "+str(formatted_data))
 
-            client = init_zoom_client(zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
+            #client = init_zoom_client(zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
 
             #create_call_queue.delay(guid, formatted_data, zoom_auth.client_id, zoom_auth.client_secret, zoom_auth.account_id)
 
 
             logger.critical("function name : "+function_name)
 
-            globals()[function_name].delay(guid,
-                    formatted_data,
-                    zoom_auth.client_id,
-                    zoom_auth.client_secret,
-                    zoom_auth.account_id
+            if "_v1" in function_name :
+                globals()[function_name].delay(guid,
+                    related_objects,
+                    token
                 )
+            else:
+                globals()[function_name].delay(guid,
+                        formatted_data,
+                        zoom_auth.client_id,
+                        zoom_auth.client_secret,
+                        zoom_auth.account_id
+                    )
 
 
             # job.status = "executed"
