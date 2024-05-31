@@ -44,8 +44,8 @@ DB_HOST = config('DB_HOST')
 DB_PORT = config('DB_PORT', cast=int)
 
 
-ALLOWED_HOSTS = ['valid-patient-cat.ngrok-free.app']
-CSRF_TRUSTED_ORIGINS = ['https://valid-patient-cat.ngrok-free.app']
+ALLOWED_HOSTS = ['automationstation.ngrok.app']
+CSRF_TRUSTED_ORIGINS = ['https://automationstation.ngrok.app']
 
 ASGI_APPLICATION = "automation_station.routing.application"
 # Application definition
@@ -178,7 +178,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Get the base logging level from the environment, or default to DEBUG
 
-LOGGING_LEVEL = 'CRITICAL'
+LOGGING_LEVEL = 'INFO'
 LOGGING_CONFIG = None
 logging.config.dictConfig({
     'version': 1,

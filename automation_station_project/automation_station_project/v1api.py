@@ -691,4 +691,129 @@ def update_ca_call_handling(bearer_token, json_data, common_area_ext):
         logger.debug("Failed to update common area call handling. Status code:{}".format(response.content))
         return None
     
+def submit_phone_create_site_to_zoom_api(org_account_info, bearer_token, row):
+    url = f"https://us01pbx.zoom.us/api/v2/pbx/account/{org_account_info}phone/site"
+
+    headers = {
+        "Authorization": "Bearer " + bearer_token,
+        "Content-Type": "application/json"
+    }
+
+    response = requests.post(url, headers=headers, json=row)
+    return response
+
+def submit_phone_create_auto_receptionist_to_zoom_api(org_account_info, token, json_payload):
+    url = "https://us01pbx.zoom.us/api/v2/pbx/account/rWTImEw4R72bLLeD6xbznw/auto-receptionist"  # Example URL, adjust to actual endpoint
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, json_payload, headers=headers)
+    return response
+
+def submit_phone_create_common_area_to_zoom_api(account_id, bearer_token, payload):
+    url = f"https://us01pbx.zoom.us/api/v2/pbx/account/{account_id}/commonAreaV2"
+      # Example URL, adjust to actual endpoint
+    headers = {
+        "Authorization": "Bearer " + bearer_token,
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, payload, headers=headers)
+    return response
+
+def get_licenseId(license):
+    """Convert plan type name to its numeric code."""
+
+    PLAN_TYPE_MAPPING = {
+        "us/ca unlimited": [200],
+        "us only": [100],
+        "global unlimited": [300]
+    }
+
+    if isinstance(license, int):
+        # If 'License' is an integer, return it as a list
+        return [license]
+    else:
+        # If 'License' is a string, map it to its numeric code
+        return PLAN_TYPE_MAPPING.get(license.strip())
+
+
+def submit_phone_create_call_queue_to_zoom_api(account_id, bearer_token, payload):
+    url = f"https://us01pbx.zoom.us/api/v2/pbx/account/{account_id}/group"
+      # Example URL, adjust to actual endpoint
+    headers = {
+        "Authorization": "Bearer " + bearer_token,
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, payload, headers=headers)
+    return response
+
+def get_user_extensionId(account_id, bearer_token, user_extension_number):
+    base_url = f"https://us01pbx.zoom.us/api/v2/pbx/account/{account_id}/extension?page_number=1&page_size=15&withPhoneNumber=true&includeEmergencyAddress=true&module=userZr&operate=Read&isLimitRole=true"
+    headers = { "Authorization": "Bearer " + bearer_token }
     
+    page_number = 1
+    total_pages = None
+
+    (f"Fetching Common Area ID for Display Name '{user_extension}'")  # Debugging line
+    while True:
+        params = {"page_number": page_number}
+        response = requests.get(base_url, headers=headers, params=params)
+
+        if response.status_code != 200:
+            print(f"Received non-200 response: {response.status_code}")  # Debugging line
+            return None
+
+        data = response.json()
+        records = data.get("records", [])
+        for record in records:
+            if record.get("extensionNumber") == user_extension_number:
+                logging.info(f"Extension ID Found: {record.get('extensionId')}")
+                return record.get("extensionId")  # Debugging line
+            
+        if total_pages is None:
+            total_pages = data.get("pageTotal", 0)
+            logging.info(f"Total pages found: {total_pages}")  # Debugging line
+
+        if page_number >= total_pages:
+            logging.info(f"Reached end of pages at page {page_number}")  # Debugging line
+            break
+
+        page_number += 1
+    logging.info(f"No Extension Id found for Extension Number '{user_extension_number}'")
+    return None
+
+def get_common_area_extensionId(org_account_info, bearer_token, common_area_extension_number):
+    base_url = f"https://us01pbx.zoom.us/api/v2/pbx/account/{org_account_info}/commonAreaV2?"
+    headers = { "Authorization": "Bearer " + bearer_token }
+    
+    page_number = 1
+    total_pages = None
+
+    (f"Fetching Common Area ID for Extension Number '{common_area_extension_number}'")  # Debugging line
+    while True:
+        params = {"page_number": page_number}
+        response = requests.get(base_url, headers=headers, params=params)
+
+        if response.status_code != 200:
+            print(f"Received non-200 response: {response.status_code}")  # Debugging line
+            return None
+
+        data = response.json()
+        records = data.get("records", [])
+        for record in records:
+            if record.get("extensionNumber") == common_area_extension_number:
+                logging.info(f"Extension ID Found: {record.get('extensionId')}")
+                return record.get("extensionId")  # Debugging line
+            
+        if total_pages is None:
+            total_pages = data.get("pageTotal", 0)
+            logging.info(f"Total pages found: {total_pages}")  # Debugging line
+
+        if page_number >= total_pages:
+            logging.info(f"Reached end of pages at page {page_number}")  # Debugging line
+            break
+
+        page_number += 1
+    logging.info(f"No Extension Id found for CAP Extension '{common_area_extension_number}'")
+    return None

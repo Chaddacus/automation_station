@@ -7,7 +7,7 @@ from django.apps import apps
 from django.template.loader import render_to_string
 from asgiref.sync import sync_to_async
 from automation_station_project.tasks import create_call_queue, add_call_queue_members, add_sites, add_auto_receptionist, update_auto_receptionist, add_common_areas, cc_create_call_queue, cc_update_call_queue, cc_create_disposition, cc_add_users, cc_create_inbox
-from automation_station_project.tasks import zoom_emergency_alert_notification_v1
+from automation_station_project.tasks import zoom_emergency_alert_notification_v1, zp_create_site_v1, zp_create_auto_receptionist_v1, zp_create_call_queue_v1, zp_create_common_area_v1
 from automation_station_project.helpers import init_zoom_client
 from django.forms.models import model_to_dict
 import json

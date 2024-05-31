@@ -1,0 +1,3 @@
+name,closeHourAction,openHourAction,holidayHourAction,templateId,Site Name
+Receptionist 1,1,2,3,template_123,site_001
+Receptionist 2,0,1,2,template_456,site_002

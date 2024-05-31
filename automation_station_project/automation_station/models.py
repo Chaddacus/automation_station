@@ -359,6 +359,7 @@ class ZoomCCInbox(models.Model):
     def format_failed_collection(self):
         return f"[{self.inbox_name}] failed to create inbox: task cancelled"
     
+    
 class ZoomEmergencyAlertNotificationV1(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
@@ -370,7 +371,135 @@ class ZoomEmergencyAlertNotificationV1(models.Model):
     target_name = models.CharField(max_length=255)
 
     def __str__(self):
-        return "zoom_emergency_alert_notification_v1"       
+        return "zoom_emergency_alert_notification_v1"
+    
+class ZoomCreateCommonAreaV1(models.Model):
+    PLAN_TYPE_200 = 200
+    PLAN_TYPE_CHOICES = [
+        (PLAN_TYPE_200, 'US/CA Unlimited')
+    ]
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zp_create_common_area_v1'
+    )
+    displayName = models.CharField(max_length=15)
+    extensionNumber = models.CharField(max_length=10)
+    siteName = models.CharField(max_length=255)
+    License = models.IntegerField(choices=PLAN_TYPE_CHOICES)
+    phoneCountry = models.CharField(max_length=2, default='US')
+    timeZone = models.CharField(max_length=50, default='America/Los_Angeles')
+    templateId = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return "zp_create_common_area_v1"
+    
+class ZPCreateCallQueueV1(models.Model):
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zp_create_call_queue_v1'
+    )
+    user_extension_ids = models.JSONField()  # Requires Django 3.1 or later
+    common_area_extension_ids = models.JSONField()  # Requires Django 3.1 or later
+    call_queue_name = models.CharField(max_length=255)
+    extensionNumber = models.CharField(max_length=10)
+    templateId = models.CharField(max_length=255, blank=True, null=True)
+    site_name = models.CharField(max_length=255)
+  # Assuming this is a list of user IDs
+
+    def __str__(self):
+        return 'zp_create_call_queue_v1'
+
+class CountryInfo(models.Model):
+    iso_code = models.CharField(max_length=10)
+    name = models.CharField(max_length=100)
+    phone_number_support = models.IntegerField()
+    support_toll_free = models.BooleanField()
+    support_toll = models.BooleanField()
+    has_area_code = models.BooleanField()
+    order_pn_has_state = models.BooleanField()
+    order_pn_has_city = models.BooleanField()
+    has_state = models.BooleanField()
+    has_city = models.BooleanField()
+    has_zip = models.BooleanField()
+    strict_check_address = models.BooleanField()
+
+class CountryDetail(models.Model):
+    iso_code = models.CharField(max_length=10)
+    name = models.CharField(max_length=100)
+    phone_number_support = models.IntegerField()
+    support_toll_free = models.BooleanField()
+    support_toll = models.BooleanField()
+    has_area_code = models.BooleanField()
+    order_pn_has_state = models.BooleanField()
+    order_pn_has_city = models.BooleanField()
+    has_state = models.BooleanField()
+    has_city = models.BooleanField()
+    has_zip = models.BooleanField()
+    strict_check_address = models.BooleanField()
+
+class EmergencyAddress(models.Model):
+    country = models.CharField(max_length=2)
+    address_line1 = models.CharField(max_length=255)
+    city = models.CharField(max_length=100)
+    state_code = models.CharField(max_length=10)
+    house_number = models.CharField(max_length=10)
+    street_name = models.CharField(max_length=255)
+    street_suffix = models.CharField(max_length=50, blank=True, null=True)
+    pre_directional = models.CharField(max_length=10, blank=True, null=True)
+    post_directional = models.CharField(max_length=10, blank=True, null=True)
+    plus_four = models.CharField(max_length=10, blank=True, null=True)
+    level = models.IntegerField(default=0)
+    type = models.IntegerField(default=0)
+    zip = models.CharField(max_length=10)
+    state_id = models.CharField(max_length=50)
+    country_info = models.OneToOneField(CountryInfo, on_delete=models.CASCADE)
+    country_detail = models.OneToOneField(CountryDetail, on_delete=models.CASCADE)
+
+class AutoReceptionist(models.Model):
+    name = models.CharField(max_length=255)
+    extension_number = models.CharField(max_length=10, blank=True, null=True)
+    open_hour_action = models.IntegerField(default=0)
+    close_hour_action = models.IntegerField(default=0)
+    holiday_hour_action = models.IntegerField(default=0)
+
+class ZPCreateSiteV1(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zp_create_site_v1'
+    )
+    name = models.CharField(max_length=255)
+    auto_receptionist = models.OneToOneField(AutoReceptionist, on_delete=models.CASCADE)
+    emergency_address = models.OneToOneField(EmergencyAddress, on_delete=models.CASCADE)
+    sip_zone_id = models.CharField(max_length=50)
+    site_code = models.CharField(max_length=10)
+    short_extension_length = models.IntegerField()
+    ranges = models.JSONField(default=list, blank=True, null=True)
+    state_code = models.CharField(max_length=10)
+    city = models.CharField(max_length=100)
+
+    def __str__(self):
+        return "zp_create_site_v1"
+
+class ZPCreateAutoReceptionistV1(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Updated to use settings.AUTH_USER_MODEL
+        on_delete=models.CASCADE,
+        related_name='zp_create_auto_receptionist_v1'
+    )
+    name = models.CharField(max_length=255)
+    close_hour_action = models.IntegerField(default=0)
+    open_hour_action = models.IntegerField(default=0)
+    holiday_hour_action = models.IntegerField(default=0)
+    template_id = models.CharField(max_length=255, blank=True, null=True)
+    siteName = models.CharField(max_length=255)
+
+    def __str__(self):
+        return 'zp_create_auto_receptionist_v1'
+
 
 class Job(models.Model):
     STATUS_CHOICES = (

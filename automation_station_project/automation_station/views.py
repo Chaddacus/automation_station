@@ -18,7 +18,7 @@ from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from .models import ZoomPhoneQueue, Job, JobCollection, ZoomAuthServerToServer,ZoomPhoneQueueMembers, ZoomPhoneAddSites, ZoomCCDisposition, ZoomCCInbox
 from .models import ZoomPhoneAddAutoReceptionist, ZoomPhoneUpdateAutoReceptionist, ZoomPhoneAddCommonAreas, ZoomCCQueue, ZoomCCUpdateQueue, ZoomCCAddUsers
-from .models import ZoomEmergencyAlertNotificationV1
+from .models import ZoomEmergencyAlertNotificationV1, ZPCreateSiteV1, ZPCreateCallQueueV1, ZPCreateAutoReceptionistV1, ZoomCreateCommonAreaV1
 from automation_station_project.tasks import add
 
 from time import sleep
@@ -770,6 +770,61 @@ def emergency_alert_notification_v1(request):
 
                 # Create a Site instance for each row
 
+def create_site_v1(request):
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        
+        if not validate_token(request):
+            return redirect('settings')
+            
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="Zoom Create Site V1",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+            # Create ZPCreateSiteV1 instance
+            zp_create_site_v1 = ZPCreateSiteV1.objects.create(
+                user=request.user,
+                name=row.get('Site Name', ''),
+                auto_receptionist_name=row.get('auto_receptionist_name', ''),
+                sip_zone_id=row.get('sip_zone_id', 'kBVB7M8ISlmZbJkcF1UkVg'),
+                site_code=row.get('Site Code', ''),
+                short_extension_length=int(row.get('short_extension_length', 2)),
+                state_code=row.get('State Code', ''),
+                city=row.get('City', '')
+            )
+
+            # Create JobCollection instance for the ZPCreateSiteV1
+            content_type = ContentType.objects.get_for_model(ZPCreateSiteV1)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {zp_create_site_v1.name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=zp_create_site_v1.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The Zoom site creation job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
 def validate_token(request):
     
     if not request.session.get('zoom_pbx_token'):
@@ -783,10 +838,205 @@ def validate_token(request):
         return False
     return True
        
+def create_auto_receptionist_v1(request):
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        
+        # Token validation logic (assuming a validate_token function exists)
+        if not validate_token(request):
+            return redirect('settings')
 
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="Create Auto Receptionist",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+            # Prepare payload for AutoReceptionist
+            payload = {
+                "name": row.get('arName', ''),
+                "closeHourAction": int(row.get('closeHourAction', 0)),
+                "openHourAction": int(row.get('openHourAction', 0)),
+                "holidayHourAction": int(row.get('holidayHourAction', 0)),
+                "templateId": row.get('template_id', ''),
+                "siteName": row.get('siteName', '')
+            }
+
+            # Create AutoReceptionist instance
+            auto_receptionist = ZPCreateAutoReceptionistV1.objects.create(
+                user=request.user,
+                name=payload['name'],
+                close_hour_action=payload['closeHourAction'],
+                open_hour_action=payload['openHourAction'],
+                holiday_hour_action=payload['holidayHourAction'],
+                template_id=payload['templateId'],
+                siteName=payload['siteName']
+            )
+
+            # Create JobCollection instance for the AutoReceptionist
+            content_type = ContentType.objects.get_for_model(ZPCreateAutoReceptionistV1)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {auto_receptionist.name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=auto_receptionist.pk,
+            )
+
+        if job_created:
+            messages.success(request, "The Auto Receptionist creation job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+    return render(request, 'create_auto_receptionist.html')  # Render the form for uploading CSV if not a POST request
     
 
-    
+def create_call_queue_v1(request):
+
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        
+        if not validate_token(request):
+            return redirect('settings')
+            
+            
+        
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="Create Call Queue V1",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+            user_extension_number = row.get('user_extension')
+            common_area_extension_number = row.get('common_area_extension')
+            call_queue_name = row.get('call_queue_name')[:15]  # Truncate to 15 characters
+            extensionNumber = row.get('extensionNumber', '')[:15]  # Truncate to 15 characters
+            templateId = row.get('templateId', '')
+            site_name = row.get('site_name', '') 
+
+            alert_notification = ZPCreateCallQueueV1.objects.create(
+                user=request.user,
+                call_queue_name=call_queue_name,
+                user_extension_ids=user_extension_number,
+                common_area_extension_ids=common_area_extension_number,
+                extensionNumber=extensionNumber,
+                templateId=templateId,
+                site_name=site_name
+            )
+
+            content_type = ContentType.objects.get_for_model(ZPCreateCallQueueV1)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {alert_notification.call_queue_name}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=alert_notification.pk,
+            )
+
+        if job_created:
+            messages.success(request, "Call Queue Creation V1 Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+                # Create a Site instance for each row
+
+def create_common_area_v1(request):
+    PLAN_TYPE_STR_TO_INT = {
+        'us/ca unlimited': ZoomCreateCommonAreaV1.PLAN_TYPE_200,
+        # Add more mappings here
+    }
+
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        
+        if not validate_token(request):
+            return redirect('settings')
+            
+            
+        
+        csv_file = request.FILES['csv_file']
+        csv_data = csv_file.read().decode('utf-8')
+
+        reader = csv.DictReader(csv_data.splitlines())
+        
+        job_created = False
+        job = None
+
+        for row in reader:
+            if not job_created:
+                # Create a single Job instance
+                job = Job.objects.create(
+                    job_name="Create Common Area V1",
+                    user=request.user,
+                    status='scheduled',
+                    scheduled_time=timezone.now(),
+                    execution_time=None,  # or set a specific time if needed
+                )
+                job_created = True
+
+            plan_type_str = row.get('License', '')
+            plan_type_int = PLAN_TYPE_STR_TO_INT.get(plan_type_str.lower(), None)
+            displayName = row.get('displayName')[:15]  # Truncate to 15 characters
+            extensionNumber = row.get('extensionNumber', '')[:15]  # Truncate to 15 characters
+            phoneCountry = row.get('phoneCountry', '')[:2]    
+
+            alert_notification = ZoomCreateCommonAreaV1.objects.create(
+                user=request.user,
+                displayName=displayName,
+                siteName=row.get('siteName', ''),
+                License=plan_type_int,  # Changed 'license' to 'License'
+                extensionNumber=extensionNumber,
+                phoneCountry=phoneCountry,
+                timeZone=row.get('timeZone', ''),
+                templateId=row.get('templateId', ''),
+            )
+
+            content_type = ContentType.objects.get_for_model(ZoomCreateCommonAreaV1)
+            JobCollection.objects.create(
+                status='scheduled',  # or any other initial status
+                name=f"Job for {alert_notification.displayName}",  # Customize the name as needed
+                job=job,
+                content_type=content_type,
+                object_id=alert_notification.pk,
+            )
+
+        if job_created:
+            messages.success(request, "Emergency Alert Notification V1 Job and associated collections have been successfully added")
+        else:
+            messages.warning(request, "No records found in the CSV file")
+
+        return render(request, 'index.html')  # Redirect to a success page or another relevant view
+
+                # Create a Site instance for each row
     
 
 def zoomlogin(request):

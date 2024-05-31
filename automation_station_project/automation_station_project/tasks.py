@@ -8,8 +8,11 @@ import json
 
 
 from .helpers import process_csv, init_zoom_client, site_id, call_queue_id, common_area_extension_id, site_json, auto_receptionist_id, cc_queue_id, get_role_id
-from .v1api import api_pbx_account_info, add_alert_rule, get_site_id
+from .v1api import api_pbx_account_info, add_alert_rule, get_site_id, submit_phone_create_site_to_zoom_api, submit_phone_create_auto_receptionist_to_zoom_api, submit_phone_create_common_area_to_zoom_api, get_licenseId
+from .v1api import submit_phone_create_call_queue_to_zoom_api
 from automation_station.models import Job, JobExecutionLogs
+from automation_station.models import ZPCreateSiteV1, CustomUser, ZPCreateAutoReceptionistV1
+
 import logging
 
 from channels.layers import get_channel_layer
@@ -136,6 +139,439 @@ def zoom_emergency_alert_notification_v1(guid, data, token):
         }
     )
     logger.critical("message sent")
+
+@shared_task
+def zp_create_site_v1(guid, data, token):
+    output = []
+    results = {}
+    success = 0
+    failed = 0
+    job_result = {}
+
+    bearer_token = token
+    logger.info(f"Bearer token: {bearer_token}")
+    account_json = api_pbx_account_info(bearer_token)
+    
+    for row in data:
+
+        if account_json:
+                account_id = account_json['accountId']
+                
+        else:
+                
+            output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            output.append("Error retrieving account id, invalid token, or no account found.")
+            output.append("Call Queue Not Created ")
+            action_success = False
+            failed +=1
+            job_result[str(row['id'])] = action_success
+            break
+
+        if cache.get(f'stop_task_{guid}'):
+            output.append("Task Stopped")
+            break
+
+        logger.info(f"Processing row {row.get('id')}")
+
+        # Extract necessary fields from the payload
+        auto_receptionist_data = row.get('autoReceptionist', {})
+        emergency_address_data = row.get('emergencyAddress', {})
+        country_info_data = emergency_address_data.get('countryInfo', {})
+        country_detail_data = emergency_address_data.get('countryDetail', {})
+        site_user = CustomUser.objects.get(id=1)
+
+        # Create CountryInfo instance
+        country_info = CountryInfo.objects.create(
+            iso_code=country_info_data.get('isoCode', 'US'),
+            name=country_info_data.get('name', 'United States'),
+            phone_number_support=int(country_info_data.get('phoneNumberSupport', 1)),
+            support_toll_free=bool(country_info_data.get('supportTollFree', True)),
+            support_toll=bool(country_info_data.get('supportToll', True)),
+            has_area_code=bool(country_info_data.get('hasAreaCode', True)),
+            order_pn_has_state=bool(country_info_data.get('orderPnHasState', True)),
+            order_pn_has_city=bool(country_info_data.get('orderPnHasCity', True)),
+            has_state=bool(country_info_data.get('hasState', True)),
+            has_city=bool(country_info_data.get('hasCity', True)),
+            has_zip=bool(country_info_data.get('hasZip', True)),
+            strict_check_address=bool(country_info_data.get('strictCheckAddress', True))
+        )
+        logger.info(f"CountryInfo created: {country_info}")
+
+        # Create CountryDetail instance
+        country_detail = CountryDetail.objects.create(
+            iso_code=country_detail_data.get('isoCode', 'US'),
+            name=country_detail_data.get('name', 'United States'),
+            phone_number_support=int(country_detail_data.get('phoneNumberSupport', 1)),
+            support_toll_free=bool(country_detail_data.get('supportTollFree', True)),
+            support_toll=bool(country_detail_data.get('supportToll', True)),
+            has_area_code=bool(country_detail_data.get('hasAreaCode', True)),
+            order_pn_has_state=bool(country_detail_data.get('orderPnHasState', True)),
+            order_pn_has_city=bool(country_detail_data.get('orderPnHasCity', True)),
+            has_state=bool(country_detail_data.get('hasState', True)),
+            has_city=bool(country_detail_data.get('hasCity', True)),
+            has_zip=bool(country_detail_data.get('hasZip', True)),
+            strict_check_address=bool(country_detail_data.get('strictCheckAddress', True))
+        )
+        logger.info(f"CountryDetail created: {country_detail}")
+
+        # Create EmergencyAddress instance
+        emergency_address = EmergencyAddress.objects.create(
+            country=emergency_address_data.get('country', 'US'),
+            address_line1=emergency_address_data.get('addressLine1', ''),
+            city=emergency_address_data.get('city', ''),
+            state_code=emergency_address_data.get('stateCode', ''),
+            house_number=emergency_address_data.get('houseNumber', ''),
+            street_name=emergency_address_data.get('streetName', ''),
+            street_suffix=emergency_address_data.get('streetSuffix', ''),
+            pre_directional=emergency_address_data.get('preDirectional', ''),
+            post_directional=emergency_address_data.get('postDirectional', ''),
+            plus_four=emergency_address_data.get('plusFour', ''),
+            level=int(emergency_address_data.get('level', 0)),
+            type=int(emergency_address_data.get('type', 0)),
+            zip=emergency_address_data.get('zip', ''),
+            state_id=emergency_address_data.get('stateId', ''),
+            country_info=country_info,
+            country_detail=country_detail
+        )
+        logger.info(f"EmergencyAddress created: {emergency_address}")
+
+        # Create AutoReceptionist instance
+        auto_receptionist = AutoReceptionist.objects.create(
+            name=auto_receptionist_data.get('name', ''),
+            extension_number=auto_receptionist_data.get('extensionNumber', ''),
+            open_hour_action=int(auto_receptionist_data.get('openHourAction', 0)),
+            close_hour_action=int(auto_receptionist_data.get('closeHourAction', 0)),
+            holiday_hour_action=int(auto_receptionist_data.get('holidayHourAction', 0))
+        )
+        logger.info(f"AutoReceptionist created: {auto_receptionist}")
+
+        # Create ZPCreateSiteV1 instance
+        zoom_site = ZPCreateSiteV1.objects.create(
+            user=site_user,
+            name=row.get('Site Name', ''),
+            auto_receptionist=auto_receptionist,
+            emergency_address=emergency_address,
+            sip_zone_id=row.get('sipZoneId', ''),
+            site_code=row.get('siteCode', ''),
+            short_extension_length=int(row.get('shortExtensionLength', 0)),
+            state_code=row.get('stateCode', ''),
+            city=row.get('city', '')
+        )
+        logger.info(f"Site created: {zoom_site}")
+
+        # Submit the payload to Zoom API
+        response = submit_phone_create_site_to_zoom_api(account_id, token, row)
+        if response.status_code == 201:
+            output.append(f"Site {zoom_site.name} created successfully and submitted to Zoom API")
+            action_success = True
+            success += 1
+        else:
+            output.append(f"Site {zoom_site.name} created, but failed to submit to Zoom API: {response.json()}")
+            action_success = False
+            failed += 1
+
+    job_result[str(row.get('id'))] = action_success
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        'job_group',
+        {
+            'type': 'job.message',
+            'message': {
+                'guid': guid,
+                'output': output,
+                'success': success,
+                'failed': failed,
+                'job_result': job_result,
+            }
+        }
+    )
+
+    results = {
+        "guid": guid,
+        "job_result": job_result,
+        "success": success,
+        "failed": failed,
+        "output": output,
+    }
+
+    async_to_sync(channel_layer.group_send)(
+        'job_group',
+        {
+            'type': 'job.message',
+            'message': results
+        }
+    )
+    logger.critical("message sent")
+
+@shared_task
+def zp_create_auto_receptionist_v1(guid, data, token):
+    output = []
+    results = {}
+    success = 0
+    failed = 0
+    job_result = {}
+
+    
+    bearer_token = token
+
+        
+    account_json = api_pbx_account_info(bearer_token)
+
+    for row in data:
+
+        if account_json:
+            account_id = account_json['accountId']
+            
+        else:
+            
+            output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            output.append("Error retrieving account id, invalid token, or no account found.")
+            output.append("Call Queue Not Created ")
+            action_success = False
+            failed +=1
+            job_result[str(row['id'])] = action_success
+            break
+
+        if cache.get(f'stop_task_{guid}'):
+            output.append("Task Stopped")
+            break
+
+        siteid = get_site_id(bearer_token, account_id, row['siteName'])
+
+        if siteid is None:
+            output.append(f"Site {row['siteName']} not found")
+            continue
+
+            
+            # Prepare payload for AutoReceptionist
+        payload = {
+            "name": row.get('arName', ''),
+            "closeHourAction": int(row.get('closeHourAction', 0)),
+            "openHourAction": int(row.get('openHourAction', 0)),
+            "holidayHourAction": int(row.get('holidayHourAction', 0)),
+            "templateId": row.get('templateId', ''),
+            "siteId": "dAMQoIAYRPuhE1uC-q6K2A"
+        }
+            
+            # Convert payload to JSON
+        payload_json = json.dumps(payload)
+            
+            # Submit payload to Zoom API
+        response = submit_phone_create_auto_receptionist_to_zoom_api(payload_json, token, account_id)
+        if response.status_code == 201:
+            output.append(f"Auto Receptionist {payload.get('name')} created successfully and submitted to Zoom API")
+            success += 1
+            action_success = True
+        else:
+            output.append(f"Auto Receptionist {payload.get('name')} created, but failed to submit to Zoom API: {response.json()}")
+            failed += 1
+            action_success = False
+
+        job_result[str(row['id'])] = action_success
+
+    return {
+        'guid': guid,
+        'output': output,
+        'success': success,
+        'failed': failed,
+        'job_result': job_result
+    }
+
+@shared_task
+def zp_create_call_queue_v1(guid, data, token):
+    output = []
+    results = {}
+    success = 0
+    failed = 0
+    job_result = {}
+
+    bearer_token = token
+
+    account_json = api_pbx_account_info(bearer_token)
+
+    for row in data:
+        if account_json:
+            account_id = account_json['accountId']
+        else:
+            output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            output.append("Error retrieving account id, invalid token, or no account found.")
+            output.append("Call Queue Not Created ")
+            action_success = False
+            failed += 1
+            job_result[str(row['id'])] = action_success
+            break
+
+        if cache.get(f'stop_task_{guid}'):
+            output.append("Task Stopped")
+            break
+        
+        extensionIds= get_site_id(bearer_token, account_id, row['user_extension_ids'])
+        capExtensionIds = get_site_id(bearer_token, account_id, row['common_area_extension_ids'])
+        siteid = get_site_id(bearer_token, account_id, row['site_name'])
+        extensionNumber = row['extensionNumber']
+        name = row['call_queue_name']
+        templateId = row['templateId']
+
+
+        payload = {
+        "extensionIds": extensionIds,
+        "capExtensionIds": capExtensionIds,
+        "name": name,
+        "extensionNumber": extensionNumber,
+        "templateId": templateId,
+        "siteId": siteid
+        }
+
+        json_data=json.dumps(payload)
+
+        logger.info(f"Payload: {payload}")
+        print(payload)
+        response = submit_phone_create_call_queue_to_zoom_api(account_id, bearer_token, json_data)
+
+        if response.status_code == 200:
+            output.append(f"Call Queue {name} created successfully")
+            action_success = True
+            success += 1
+        else:
+            output.append(f"Failed to create Call Queue for {name}")
+            output.append(response.json())
+            action_success = False
+            failed += 1
+
+        job_result[str(row['id'])] = action_success
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+            'job_group',
+            {
+                'type': 'job.message',
+                'message': {
+                    'guid': guid,
+                    'output': output,
+                    'success': success,
+                    'failed': failed,
+                    'job_result': job_result,
+                }
+            }
+        )
+
+    results = {
+        "guid": guid,
+        "job_result": job_result,
+        "success": success,
+        "failed": failed,
+        "output": output,
+    }
+
+    async_to_sync(channel_layer.group_send)(
+        'job_group',
+        {
+            'type': 'job.message',
+            'message': results
+        }
+    )
+    logger.critical("message sent")
+
+@shared_task
+def zp_create_common_area_v1(guid, data, token):
+    output = []
+    results = {}
+    success = 0
+    failed = 0
+    job_result = {}
+
+    bearer_token = token
+
+    account_json = api_pbx_account_info(bearer_token)
+
+    for row in data:
+        if account_json:
+            account_id = account_json['accountId']
+        else:
+            output.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            output.append("Error retrieving account id, invalid token, or no account found.")
+            output.append("Call Queue Not Created ")
+            action_success = False
+            failed += 1
+            job_result[str(row['id'])] = action_success
+            break
+
+        if cache.get(f'stop_task_{guid}'):
+            output.append("Task Stopped")
+            break
+        
+        displayName = row.get('displayName')
+        siteid = get_site_id(bearer_token, account_id, row['siteName'])
+        extensionNumber = row['extensionNumber']
+        phoneCountry = row['phoneCountry']
+        timeZone = row['timeZone']
+        templateId = row['templateId']
+        planTypes = get_licenseId(row.get('License'))
+
+
+        payload = {
+        "displayName": displayName,
+        "siteId": siteid,
+        "extensionNumber": extensionNumber,
+        "phoneCountry": phoneCountry,
+        "timeZone": timeZone,
+        "templateId": templateId,
+        "planTypes": planTypes
+        }
+
+        json_data=json.dumps(payload)
+
+        logger.info(f"Payload: {payload}")
+        print(payload)
+        response = submit_phone_create_common_area_to_zoom_api(account_id, bearer_token, json_data)
+
+        if response.status_code == 200:
+            output.append(f"Common area for {displayName} created successfully")
+            action_success = True
+            success += 1
+        else:
+            output.append(f"Failed to create Common area for {displayName}")
+            output.append(response.json())
+            action_success = False
+            failed += 1
+
+        job_result[str(row['id'])] = action_success
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+            'job_group',
+            {
+                'type': 'job.message',
+                'message': {
+                    'guid': guid,
+                    'output': output,
+                    'success': success,
+                    'failed': failed,
+                    'job_result': job_result,
+                }
+            }
+        )
+
+    results = {
+        "guid": guid,
+        "job_result": job_result,
+        "success": success,
+        "failed": failed,
+        "output": output,
+    }
+
+    async_to_sync(channel_layer.group_send)(
+        'job_group',
+        {
+            'type': 'job.message',
+            'message': results
+        }
+    )
+    logger.critical("message sent")
+
+
+
 
 @shared_task
 def add(x, y):
@@ -545,6 +981,7 @@ def update_auto_receptionist(guid, data, zoomclientId, zoomclientSecret, zoomacc
                 }
             )
         logger.critical("message sent")
+
 @shared_task
 def add_common_areas(guid, data, zoomclientId, zoomclientSecret, zoomaccountId):
 
