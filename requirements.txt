@@ -21,7 +21,7 @@ constantly==23.10.4
 cryptography==42.0.2
 daphne==4.1.0
 Deprecated==1.2.14
-Django==5.0.1
+Django== 4.2.14
 django-celery-results==2.5.1
 django-oauth-toolkit==2.3.0
 django-redis==5.4.0
