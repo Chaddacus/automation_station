@@ -35,9 +35,11 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
         run: |
           source venv/bin/activate
-          python automation_station_project/manage.py collectstatic --noinput
+          cd automation_station_project
+          python manage.py collectstatic --noinput
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
@@ -80,4 +82,7 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
-        working-directory: ./automation_station
+          DB_PORT: ${{ secrets.DB_PORT }}
+        run: |
+          source venv/bin/activate
+          gunicorn --bind=0.0.0.0 --timeout 600 automation_station_project.wsgi:application
