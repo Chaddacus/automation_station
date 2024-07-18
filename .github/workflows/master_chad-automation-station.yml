@@ -29,6 +29,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run collectstatic
+        env:
+          SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
         run: |
           source venv/bin/activate
           python automation_station_project/manage.py collectstatic --noinput
@@ -68,3 +70,5 @@ jobs:
           app-name: 'chad-automation-station'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_A43D4D4FB7E2468196F5531E7332E324 }}
+        env:
+          SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
