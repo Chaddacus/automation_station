@@ -44,8 +44,8 @@ DB_HOST = config('DB_HOST')
 DB_PORT = config('DB_PORT', cast=int)
 
 
-ALLOWED_HOSTS = ['automationstation.ngrok.app']
-CSRF_TRUSTED_ORIGINS = ['https://automationstation.ngrok.app']
+ALLOWED_HOSTS = ['chad-automation-station.azurewebsites.net']
+CSRF_TRUSTED_ORIGINS = ['https://chad-automation-station.azurewebsites.net/']
 
 ASGI_APPLICATION = "automation_station.routing.application"
 # Application definition
