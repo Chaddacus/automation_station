@@ -29,6 +29,12 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run collectstatic
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
         run: |
           source venv/bin/activate
           python automation_station_project/manage.py collectstatic --noinput
