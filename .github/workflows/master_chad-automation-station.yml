@@ -22,32 +22,28 @@ jobs:
         run: |
           python -m venv venv
           source venv/bin/activate
-        working-directory: ./automation_station_project
 
       - name: Install dependencies
         run: |
           source venv/bin/activate
-          pip install -r requirements.txt
-        working-directory: ./automation_station_project
+          pip install -r automation_station_project/requirements.txt
 
       - name: Run collectstatic
         run: |
           source venv/bin/activate
           python manage.py collectstatic --noinput
-        working-directory: ./automation_station_project
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Zip artifact for deployment
         run: |
           zip -r release.zip ./* -x "venv/*"
-        working-directory: ./automation_station_project
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: ./automation_station_project/release.zip
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
