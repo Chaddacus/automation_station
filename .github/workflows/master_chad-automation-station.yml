@@ -38,8 +38,10 @@ jobs:
           DB_PORT: ${{ secrets.DB_PORT }}
         run: |
           source venv/bin/activate
-          cd automation_station
+          cd automation_station_project
           python manage.py collectstatic --noinput
+
+      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Zip artifact for deployment
         run: |
@@ -75,6 +77,7 @@ jobs:
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
+        id: deploy-to-webapp
         with:
           app-name: 'chad-automation-station'
           slot-name: 'Production'
