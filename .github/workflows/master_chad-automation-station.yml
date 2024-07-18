@@ -41,6 +41,8 @@ jobs:
           cd automation_station_project
           python manage.py collectstatic --noinput
 
+      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+
       - name: Zip artifact for deployment
         run: |
           zip -r release.zip ./* -x "venv/*"
@@ -66,9 +68,6 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
-
-      - name: List files
-        run: ls -R
 
       - name: Set up Python environment
         run: |
