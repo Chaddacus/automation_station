@@ -38,11 +38,8 @@ jobs:
           DB_PORT: ${{ secrets.DB_PORT }}
         run: |
           source venv/bin/activate
-          cd automation_station_project
+          cd automation_station
           python manage.py collectstatic --noinput
-          cd ..
-
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Zip artifact for deployment
         run: |
