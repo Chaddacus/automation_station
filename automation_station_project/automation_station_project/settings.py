@@ -44,8 +44,8 @@ DB_HOST = config('DB_HOST')
 DB_PORT = config('DB_PORT', cast=int)
 
 
-ALLOWED_HOSTS = ['chad-automation-station.azurewebsites.net']
-CSRF_TRUSTED_ORIGINS = ['https://chad-automation-station.azurewebsites.net/']
+ALLOWED_HOSTS = ['chad-automation-station.azurewebsites.net', '127.0.0.1', 'automationstation.ngrok.app']
+CSRF_TRUSTED_ORIGINS = ['https://chad-automation-station.azurewebsites.net/', 'https://automationstation.ngrok.app/']
 
 ASGI_APPLICATION = "automation_station.routing.application"
 # Application definition
@@ -162,7 +162,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
-
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'automation_station/static'),
