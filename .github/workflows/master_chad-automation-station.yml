@@ -26,12 +26,12 @@ jobs:
       - name: Install dependencies
         run: |
           source venv/bin/activate
-          pip install -r automation_station_project/requirements.txt
+          pip install -r requirements.txt
 
       - name: Run collectstatic
         run: |
           source venv/bin/activate
-          python manage.py collectstatic --noinput
+          python automation_station_project/manage.py collectstatic --noinput
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
