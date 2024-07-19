@@ -29,6 +29,11 @@ jobs:
           pip install -r requirements.txt
           pip install gunicorn
 
+      - name: Debug - Print directory structure
+        run: |
+          echo "Printing directory structure..."
+          ls -R
+
       - name: Run collectstatic
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -75,6 +80,11 @@ jobs:
           source antenv/bin/activate
           pip install -r requirements.txt
           pip install gunicorn
+
+      - name: Debug - Print directory structure
+        run: |
+          echo "Printing directory structure..."
+          ls -R
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
