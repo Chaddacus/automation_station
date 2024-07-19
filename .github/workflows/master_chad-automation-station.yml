@@ -95,4 +95,4 @@ jobs:
       - name: Start Gunicorn
         run: |
           source antenv/bin/activate
-          gunicorn --bind=0.0.0.0:8000 --timeout 600 automation_station_project.wsgi:application
+          gunicorn --bind=0.0.0.0:8001 --timeout 600 automation_station_project.automation_station_project.wsgi:application
