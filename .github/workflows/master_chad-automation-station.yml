@@ -91,3 +91,11 @@ jobs:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DJANGO_SETTINGS_MODULE: automation_station_project.settings
+
+      - name: Run migrations
+        run: |
+          az webapp ssh --name chad-automation-station --resource-group <your-resource-group> --command "source antenv/bin/activate && python manage.py migrate"
+
+      - name: Collect static files
+        run: |
+          az webapp ssh --name chad-automation-station --resource-group <your-resource-group> --command "source antenv/bin/activate && python manage.py collectstatic --noinput"
