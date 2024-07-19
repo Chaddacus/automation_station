@@ -91,3 +91,8 @@ jobs:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DJANGO_SETTINGS_MODULE: automation_station_project.settings
+
+      - name: Run Gunicorn
+        run: |
+          source antenv/bin/activate
+          gunicorn --bind=0.0.0.0:8000 --timeout 600 automation_station_project.wsgi:application
