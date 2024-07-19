@@ -16,17 +16,19 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.8'  # Use the correct Python version if different
 
       - name: Create and start virtual environment
         run: |
           python -m venv antenv
           source antenv/bin/activate
+        shell: bash
 
       - name: Install dependencies
         run: |
           source antenv/bin/activate
           pip install -r requirements.txt
+        shell: bash
 
       - name: Run collectstatic
         env:
@@ -39,11 +41,14 @@ jobs:
           DJANGO_SETTINGS_MODULE: automation_station_project.settings
         run: |
           source antenv/bin/activate
-          python automation_station_project/manage.py collectstatic --noinput
+          cd automation_station_project
+          python manage.py collectstatic --noinput
+        shell: bash
 
       - name: Zip artifact for deployment
         run: |
           zip -r release.zip ./* -x "antenv/*"
+        shell: bash
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
@@ -66,12 +71,14 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
+        shell: bash
 
       - name: Set up Python environment
         run: |
           python -m venv antenv
           source antenv/bin/activate
           pip install -r requirements.txt
+        shell: bash
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
