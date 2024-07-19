@@ -37,10 +37,10 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          DJANGO_SETTINGS_MODULE: ${{ secrets.DJANGO_SETTINGS_MODULE }}
+          DJANGO_SETTINGS_MODULE: automation_station_project.automation_station_project.settings
         run: |
           source antenv/bin/activate
-          cd automation_station/automation_station_project
+          cd automation_station_project
           python manage.py collectstatic --noinput
 
       - name: Zip artifact for deployment
@@ -90,9 +90,4 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          DJANGO_SETTINGS_MODULE: ${{ secrets.DJANGO_SETTINGS_MODULE }}
-
-      - name: Start Gunicorn
-        run: |
-          source antenv/bin/activate
-          gunicorn --bind=0.0.0.0:8001 --timeout 600 automation_station_project.automation_station_project.wsgi:application
+          DJANGO_SETTINGS_MODULE: automation_station_project.automation_station_project.settings
