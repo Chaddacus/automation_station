@@ -1,1 +1,1 @@
-web: gunicorn automation_station_project.wsgi --log-file -
+web: gunicorn --bind=0.0.0.0 --timeout 600 automation_station_project.automation_station_project.wsgi:application
