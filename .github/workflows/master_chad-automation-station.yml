@@ -82,7 +82,7 @@ jobs:
         with:
           app-name: 'chad-automation-station'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_A43D4D4FB7E2468196F5531E7332E324 }}
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DB_NAME: ${{ secrets.DB_NAME }}
@@ -91,11 +91,3 @@ jobs:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DJANGO_SETTINGS_MODULE: automation_station_project.settings
-
-      - name: Run migrations
-        run: |
-          az webapp ssh --name chad-automation-station --resource-group chad-automation-station --command "source antenv/bin/activate && python manage.py migrate"
-
-      - name: Collect static files
-        run: |
-          az webapp ssh --name chad-automation-station --resource-group chad-automation-station --command "source antenv/bin/activate && python manage.py collectstatic --noinput"
