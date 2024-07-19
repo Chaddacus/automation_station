@@ -42,7 +42,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          DJANGO_SETTINGS_MODULE: automation_station_project.automation_station_project.settings
+          DJANGO_SETTINGS_MODULE: automation_station_project.settings
         run: |
           source antenv/bin/activate
           cd automation_station_project
@@ -100,11 +100,11 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          DJANGO_SETTINGS_MODULE: automation_station_project.automation_station_project.settings
+          DJANGO_SETTINGS_MODULE: automation_station_project.settings
 
       - name: Run Gunicorn
         env:
-          DJANGO_SETTINGS_MODULE: automation_station_project.automation_station_project.settings
+          DJANGO_SETTINGS_MODULE: automation_station.automation_station_project.automation_station_project.settings
         run: |
           source antenv/bin/activate
-          gunicorn --bind=0.0.0.0:8000 --timeout 600 automation_station_project.automation_station_project.wsgi:application
+          gunicorn --bind=0.0.0.0:8000 --timeout 600 automation_station_project.wsgi:application
