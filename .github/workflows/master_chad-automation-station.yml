@@ -16,19 +16,18 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'  # Use the correct Python version if different
+          python-version: '3.8'
 
       - name: Create and start virtual environment
         run: |
           python -m venv antenv
           source antenv/bin/activate
-        shell: bash
 
       - name: Install dependencies
         run: |
           source antenv/bin/activate
           pip install -r requirements.txt
-        shell: bash
+          pip install gunicorn
 
       - name: Run collectstatic
         env:
@@ -38,17 +37,14 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          DJANGO_SETTINGS_MODULE: automation_station_project.settings
         run: |
           source antenv/bin/activate
           cd automation_station_project
           python manage.py collectstatic --noinput
-        shell: bash
 
       - name: Zip artifact for deployment
         run: |
           zip -r release.zip ./* -x "antenv/*"
-        shell: bash
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
@@ -71,16 +67,15 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
-        shell: bash
 
       - name: Set up Python environment
         run: |
           python -m venv antenv
           source antenv/bin/activate
           pip install -r requirements.txt
-        shell: bash
+          pip install gunicorn
 
-      - name: 'Deploy to Azure Web App'
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
@@ -94,4 +89,3 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          DJANGO_SETTINGS_MODULE: automation_station_project.settings
